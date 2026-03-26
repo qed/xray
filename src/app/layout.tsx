@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { getUnfiledPriorities } from '@/lib/aggregator';
 import { PriorityModalProvider } from '@/components/PriorityModalContext';
+import PasswordGate from '@/components/PasswordGate';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -48,6 +49,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-slate-900">
+        <PasswordGate>
         <PriorityModalProvider>
           <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,6 +99,7 @@ export default function RootLayout({
             </div>
           </footer>
         </PriorityModalProvider>
+        </PasswordGate>
       </body>
     </html>
   );
