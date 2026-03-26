@@ -85,3 +85,22 @@ export function getTopWins(n: number): RankedOpportunity[] {
   all.sort((a, b) => b.score - a.score);
   return all.slice(0, n);
 }
+
+export function getOpportunitiesByMilestone(): Record<number, RankedOpportunity[]> {
+  const milestones = getMilestones();
+  const all = getAllRankedOpportunities();
+
+  const grouped: Record<number, RankedOpportunity[]> = {};
+  for (const milestone of milestones) {
+    grouped[milestone.id] = [];
+  }
+
+  for (const opp of all) {
+    if (!grouped[opp.milestoneStage]) {
+      grouped[opp.milestoneStage] = [];
+    }
+    grouped[opp.milestoneStage].push(opp);
+  }
+
+  return grouped;
+}
