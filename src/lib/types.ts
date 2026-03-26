@@ -87,7 +87,21 @@ export interface RankedOpportunity {
   complexity: string;
   effort: string;
   estimatedTimeSavings: string;
+  parsedTimeSavings: ParsedTimeSavings;
   milestoneStage: number;
   milestoneName: string;
   score: number;                   // computed impact/effort ratio for ranking
+}
+
+export type ParsedTimeSavings =
+  | { valid: true; min: number; max: number; midpoint: number; display: string }
+  | { valid: false; rawText: string; issue: string };
+
+export interface UnfiledPriority {
+  departmentSlug: string;
+  departmentName: string;
+  rank: number;
+  name: string;
+  rawText: string;
+  issue: string;
 }
