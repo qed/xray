@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { RankedOpportunity } from '@/lib/types';
+import { usePriorityModal } from './PriorityModalContext';
 
 interface PrioritiesTableProps {
   opportunities: RankedOpportunity[];
@@ -63,6 +64,7 @@ function sortOpportunities(
 export default function PrioritiesTable({
   opportunities,
 }: PrioritiesTableProps) {
+  const { openModal } = usePriorityModal();
   const [sortColumn, setSortColumn] = useState<SortColumn>('hoursSaved');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -110,7 +112,8 @@ export default function PrioritiesTable({
           {sorted.map((opp, i) => (
             <tr
               key={`${opp.departmentSlug}-${opp.rank}`}
-              className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+              onClick={() => openModal(opp)}
             >
               <td className="px-4 py-3 text-slate-400 font-mono">{i + 1}</td>
               <td className="px-4 py-3 text-slate-900 font-medium">{opp.name}</td>

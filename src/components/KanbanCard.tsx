@@ -1,4 +1,7 @@
+'use client';
+
 import type { RankedOpportunity } from '@/lib/types';
+import { usePriorityModal } from './PriorityModalContext';
 
 interface KanbanCardProps {
   opportunity: RankedOpportunity;
@@ -25,12 +28,16 @@ const complexityColors: Record<string, string> = {
 };
 
 export default function KanbanCard({ opportunity }: KanbanCardProps) {
+  const { openModal } = usePriorityModal();
   const deptColor = departmentColors[opportunity.departmentSlug] ?? 'bg-slate-100 text-slate-600';
   const impactColor = impactColors[opportunity.impact] ?? 'bg-slate-100 text-slate-500';
   const complexColor = complexityColors[opportunity.complexity] ?? 'bg-slate-100 text-slate-500';
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-3 hover:border-emerald-300 hover:bg-slate-50 transition-colors cursor-default">
+    <div
+      className="bg-white border border-slate-200 rounded-lg p-3 hover:border-emerald-300 hover:bg-slate-50 transition-colors cursor-pointer"
+      onClick={() => openModal(opportunity)}
+    >
       {/* Name */}
       <p className="text-sm font-medium text-slate-900 leading-snug mb-2 line-clamp-2">
         {opportunity.name}

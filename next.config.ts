@@ -5,7 +5,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const nextConfig: NextConfig = {
   output: 'export',
   images: { unoptimized: true },
-  basePath: isProd ? '/WeVend-Agents' : '',
+  basePath: isProd ? '/xray' : '',
   turbopack: {
     root: process.cwd(),
   },

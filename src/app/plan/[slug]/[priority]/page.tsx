@@ -42,7 +42,7 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
       {/* Breadcrumb */}
       <div className="text-sm text-slate-400">
         <Link href="/" className="hover:text-emerald-600 transition-colors">
-          Overview
+          AI Priorities
         </Link>
         <span className="mx-2">/</span>
         <Link href={`/department/${slug}`} className="hover:text-emerald-600 transition-colors">

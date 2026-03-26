@@ -51,6 +51,12 @@ function buildRankedOpportunity(
     milestoneStage,
     milestoneName,
     score: scoreOpportunity(priority),
+    whatToAutomate: priority.whatToAutomate,
+    currentState: priority.currentState,
+    whyItMatters: priority.whyItMatters,
+    dependencies: priority.dependencies,
+    suggestedApproach: priority.suggestedApproach,
+    successCriteria: priority.successCriteria,
   };
 }
 
@@ -169,6 +175,11 @@ export function getOpportunitiesByMilestone(): Record<number, RankedOpportunity[
   }
 
   return grouped;
+}
+
+export function getUnfiledRankedOpportunities(): RankedOpportunity[] {
+  const all = getAllRankedOpportunities();
+  return all.filter((opp) => !opp.parsedTimeSavings.valid);
 }
 
 export function getUnfiledPriorities(): UnfiledPriority[] {

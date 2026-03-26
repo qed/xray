@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getDepartment, getDepartmentSlugs, getMilestones, getStatuses } from '@/lib/parser';
+import { getTopWins } from '@/lib/aggregator';
 import TeamRoster from '@/components/TeamRoster';
 import ToolStack from '@/components/ToolStack';
 import PriorityCard from '@/components/PriorityCard';
@@ -18,15 +19,18 @@ export default async function DepartmentPage({ params }: { params: Promise<{ slu
 
   const { profile, priorities, scalingRisks } = department;
 
-  // Build milestone lookup for priority cards
-  const milestoneLookup = new Map(milestones.map((m) => [m.id, m.name]));
+  // Get RankedOpportunity objects for this department's priorities
+  const allOpps = getTopWins(100);
+  const deptOpps = allOpps.filter((opp) => opp.departmentSlug === slug);
+  // Build lookup by rank
+  const oppByRank = new Map(deptOpps.map((opp) => [opp.rank, opp]));
 
   return (
     <div className="space-y-10">
       {/* Breadcrumb */}
       <div className="text-sm text-slate-400">
         <Link href="/" className="hover:text-emerald-600 transition-colors">
-          Overview
+          AI Priorities
         </Link>
         <span className="mx-2">/</span>
         <span className="text-slate-600">{profile.name}</span>
@@ -82,17 +86,12 @@ export default async function DepartmentPage({ params }: { params: Promise<{ slu
           </h2>
           <div className="space-y-3">
             {priorities.map((priority) => {
-              const statusKey = `${slug}/priority-${priority.rank}`;
-              const status = statuses[statusKey];
-              const milestoneStage = status?.milestone ?? 0;
-              const milestoneName = milestoneLookup.get(milestoneStage) ?? 'Not Started';
-
+              const opp = oppByRank.get(priority.rank);
+              if (!opp) return null;
               return (
                 <PriorityCard
                   key={priority.rank}
-                  priority={priority}
-                  milestoneStage={milestoneStage}
-                  milestoneName={milestoneName}
+                  opportunity={opp}
                 />
               );
             })}

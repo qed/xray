@@ -20,10 +20,10 @@ export default function Home() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-          Company Overview
+          AI Priorities
         </h1>
         <p className="text-slate-500 mt-1">
-          Automation opportunities across all departments
+          Automation opportunities ranked by impact
         </p>
       </div>
 

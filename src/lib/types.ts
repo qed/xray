@@ -91,6 +91,12 @@ export interface RankedOpportunity {
   milestoneStage: number;
   milestoneName: string;
   score: number;                   // computed impact/effort ratio for ranking
+  whatToAutomate: string;
+  currentState: string;
+  whyItMatters: string;
+  dependencies: string[];
+  suggestedApproach: string;
+  successCriteria: string;
 }
 
 export type ParsedTimeSavings =
