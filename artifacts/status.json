@@ -1,0 +1,18 @@
+{
+  "accounting/priority-1": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-2": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-3": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-4": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-5": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-6": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-7": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-8": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "accounting/priority-9": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "sales-operations/priority-1": { "milestone": 1, "updated": "2026-03-20", "notes": "Phase A in progress" },
+  "sales-operations/priority-2": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "sales-operations/priority-3": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "sales-operations/priority-4": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "sales-operations/priority-5": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "sales-operations/priority-6": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "sales-operations/priority-7": { "milestone": 0, "updated": "2026-03-26", "notes": "" }
+}

@@ -1,0 +1,8 @@
+{
+  "milestones": [
+    { "id": 0, "name": "Not Started", "definition": "Identified but no work begun" },
+    { "id": 1, "name": "Implemented", "definition": "Solution built and deployed" },
+    { "id": 2, "name": "2 Weeks Stable", "definition": "Running 14+ days, no critical issues" },
+    { "id": 3, "name": "Dept Head Confirmed", "definition": "Department lead verified and signed off" }
+  ]
+}
