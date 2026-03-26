@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview } from '../aggregator';
+import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities } from '../aggregator';
 
 describe('getTopWins', () => {
   const wins = getTopWins(20);
@@ -135,5 +135,67 @@ describe('getCompanyOverview', () => {
   it('has topWins array', () => {
     expect(overview.topWins.length).toBeGreaterThan(0);
     expect(overview.topWins.length).toBeLessThanOrEqual(10);
+  });
+});
+
+describe('parsedTimeSavings on RankedOpportunity', () => {
+  const wins = getTopWins(20);
+
+  it('every opportunity has parsedTimeSavings', () => {
+    for (const win of wins) {
+      expect(win.parsedTimeSavings).toBeDefined();
+      expect(typeof win.parsedTimeSavings.valid).toBe('boolean');
+    }
+  });
+
+  it('valid entries have min, max, midpoint, display', () => {
+    const valid = wins.filter((w) => w.parsedTimeSavings.valid);
+    for (const w of valid) {
+      if (w.parsedTimeSavings.valid) {
+        expect(typeof w.parsedTimeSavings.min).toBe('number');
+        expect(typeof w.parsedTimeSavings.max).toBe('number');
+        expect(typeof w.parsedTimeSavings.midpoint).toBe('number');
+        expect(w.parsedTimeSavings.display.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('invalid entries have rawText and issue', () => {
+    const invalid = wins.filter((w) => !w.parsedTimeSavings.valid);
+    for (const w of invalid) {
+      if (!w.parsedTimeSavings.valid) {
+        expect(typeof w.parsedTimeSavings.rawText).toBe('string');
+        expect(['no numeric value found', 'non-standard unit', 'not quantified']).toContain(
+          w.parsedTimeSavings.issue
+        );
+      }
+    }
+  });
+});
+
+describe('getUnfiledPriorities', () => {
+  const unfiled = getUnfiledPriorities();
+
+  it('returns an array', () => {
+    expect(Array.isArray(unfiled)).toBe(true);
+  });
+
+  it('each entry has required fields', () => {
+    for (const item of unfiled) {
+      expect(item.departmentSlug).toBeTruthy();
+      expect(item.departmentName).toBeTruthy();
+      expect(typeof item.rank).toBe('number');
+      expect(item.name).toBeTruthy();
+      expect(typeof item.rawText).toBe('string');
+      expect(['no numeric value found', 'non-standard unit', 'not quantified']).toContain(
+        item.issue
+      );
+    }
+  });
+
+  it('unfiled count + valid count equals 17', () => {
+    const allWins = getTopWins(20);
+    const validCount = allWins.filter((w) => w.parsedTimeSavings.valid).length;
+    expect(unfiled.length + validCount).toBe(17);
   });
 });

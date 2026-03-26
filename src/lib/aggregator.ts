@@ -2,12 +2,14 @@ import {
   getAllDepartments,
   getMilestones,
   getStatuses,
+  parseTimeSavings,
 } from './parser';
 import type {
   CompanyOverview,
   DepartmentSummary,
   RankedOpportunity,
   AutomationPriority,
+  UnfiledPriority,
 } from './types';
 
 const IMPACT_SCORES: Record<string, number> = {
@@ -45,6 +47,7 @@ function buildRankedOpportunity(
     complexity: priority.complexity,
     effort: priority.effort,
     estimatedTimeSavings: priority.estimatedTimeSavings,
+    parsedTimeSavings: parseTimeSavings(priority.estimatedTimeSavings),
     milestoneStage,
     milestoneName,
     score: scoreOpportunity(priority),
@@ -166,4 +169,21 @@ export function getOpportunitiesByMilestone(): Record<number, RankedOpportunity[
   }
 
   return grouped;
+}
+
+export function getUnfiledPriorities(): UnfiledPriority[] {
+  const all = getAllRankedOpportunities();
+  return all
+    .filter((opp) => !opp.parsedTimeSavings.valid)
+    .map((opp) => {
+      const parsed = opp.parsedTimeSavings;
+      return {
+        departmentSlug: opp.departmentSlug,
+        departmentName: opp.departmentName,
+        rank: opp.rank,
+        name: opp.name,
+        rawText: !parsed.valid ? parsed.rawText : '',
+        issue: !parsed.valid ? parsed.issue : '',
+      };
+    });
 }
