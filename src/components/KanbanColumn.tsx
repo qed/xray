@@ -7,24 +7,24 @@ interface KanbanColumnProps {
 }
 
 const columnColors: Record<number, string> = {
-  0: 'bg-slate-900/50 border-slate-800',
-  1: 'bg-slate-900/60 border-blue-900/40',
-  2: 'bg-slate-900/70 border-indigo-900/40',
-  3: 'bg-slate-900/80 border-emerald-900/40',
+  0: 'bg-slate-50 border-slate-200',
+  1: 'bg-blue-50/50 border-blue-200',
+  2: 'bg-indigo-50/50 border-indigo-200',
+  3: 'bg-emerald-50/50 border-emerald-200',
 };
 
 const headerAccent: Record<number, string> = {
-  0: 'text-slate-400',
-  1: 'text-blue-400',
-  2: 'text-indigo-400',
-  3: 'text-emerald-400',
+  0: 'text-slate-500',
+  1: 'text-blue-600',
+  2: 'text-indigo-600',
+  3: 'text-emerald-600',
 };
 
 const countBg: Record<number, string> = {
-  0: 'bg-slate-800 text-slate-300',
-  1: 'bg-blue-900/50 text-blue-300',
-  2: 'bg-indigo-900/50 text-indigo-300',
-  3: 'bg-emerald-900/50 text-emerald-300',
+  0: 'bg-slate-100 text-slate-600',
+  1: 'bg-blue-100 text-blue-700',
+  2: 'bg-indigo-100 text-indigo-700',
+  3: 'bg-emerald-100 text-emerald-700',
 };
 
 export default function KanbanColumn({ milestone, opportunities }: KanbanColumnProps) {
@@ -37,7 +37,7 @@ export default function KanbanColumn({ milestone, opportunities }: KanbanColumnP
       className={`flex-shrink-0 w-72 md:w-80 rounded-xl border ${colColor} flex flex-col max-h-[calc(100vh-16rem)] snap-start`}
     >
       {/* Column Header */}
-      <div className="p-4 border-b border-slate-800/50">
+      <div className="p-4 border-b border-slate-200">
         <div className="flex items-center justify-between">
           <h3 className={`text-sm font-semibold ${accent}`}>
             {milestone.name}
@@ -46,7 +46,7 @@ export default function KanbanColumn({ milestone, opportunities }: KanbanColumnP
             {opportunities.length}
           </span>
         </div>
-        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+        <p className="text-xs text-slate-400 mt-1 line-clamp-2">
           {milestone.definition}
         </p>
       </div>
@@ -54,7 +54,7 @@ export default function KanbanColumn({ milestone, opportunities }: KanbanColumnP
       {/* Cards */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {opportunities.length === 0 ? (
-          <p className="text-xs text-slate-600 text-center py-6">
+          <p className="text-xs text-slate-400 text-center py-6">
             No items
           </p>
         ) : (

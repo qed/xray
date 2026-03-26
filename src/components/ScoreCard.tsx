@@ -9,9 +9,9 @@ interface ScoreCardProps {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
-      <span className="text-3xl font-bold text-cyan-400">{value}</span>
-      <span className="text-sm text-slate-400 text-center">{label}</span>
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center gap-2">
+      <span className="text-3xl font-bold text-emerald-600">{value}</span>
+      <span className="text-sm text-slate-500 text-center">{label}</span>
     </div>
   );
 }

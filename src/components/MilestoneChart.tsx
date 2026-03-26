@@ -14,7 +14,7 @@ export default function MilestoneChart({ data }: MilestoneChartProps) {
 
   if (filtered.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
+      <div className="flex items-center justify-center h-64 text-slate-400">
         No data available
       </div>
     );
@@ -43,14 +43,14 @@ export default function MilestoneChart({ data }: MilestoneChartProps) {
         </Pie>
         <Tooltip
           contentStyle={{
-            backgroundColor: '#0f172a',
-            border: '1px solid #334155',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
             borderRadius: '8px',
-            color: '#e2e8f0',
+            color: '#334155',
           }}
         />
         <Legend
-          wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }}
+          wrapperStyle={{ color: '#64748b', fontSize: '13px' }}
         />
       </PieChart>
     </ResponsiveContainer>

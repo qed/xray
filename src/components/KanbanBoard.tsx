@@ -67,13 +67,13 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
   return (
     <div className="space-y-4">
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 bg-slate-900/50 border border-slate-800 rounded-xl p-4">
-        <span className="text-sm font-medium text-slate-400">Filters:</span>
+      <div className="flex flex-wrap items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <span className="text-sm font-medium text-slate-500">Filters:</span>
 
         <select
           value={filters.department}
           onChange={(e) => handleChange('department', e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+          className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         >
           <option value={ALL}>All Departments</option>
           {departments.map((slug) => (
@@ -86,7 +86,7 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
         <select
           value={filters.complexity}
           onChange={(e) => handleChange('complexity', e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+          className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         >
           <option value={ALL}>All Complexity</option>
           {complexities.map((c) => (
@@ -97,7 +97,7 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
         <select
           value={filters.impact}
           onChange={(e) => handleChange('impact', e.target.value)}
-          className="bg-slate-800 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+          className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600"
         >
           <option value={ALL}>All Impact</option>
           {impacts.map((i) => (
@@ -108,7 +108,7 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
         {(filters.department !== ALL || filters.complexity !== ALL || filters.impact !== ALL) && (
           <button
             onClick={() => setFilters({ department: ALL, complexity: ALL, impact: ALL })}
-            className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors ml-1"
+            className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors ml-1"
           >
             Clear filters
           </button>

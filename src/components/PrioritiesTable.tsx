@@ -8,11 +8,11 @@ interface PrioritiesTableProps {
 }
 
 const impactColors: Record<string, string> = {
-  Critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-  'Very High': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  High: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  Medium: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  Low: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
+  Critical: 'bg-red-100 text-red-700 border-red-200',
+  'Very High': 'bg-orange-100 text-orange-700 border-orange-200',
+  High: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  Medium: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Low: 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
 const EFFORT_SORT_VALUES: Record<string, number> = {
@@ -86,19 +86,19 @@ export default function PrioritiesTable({
     <div className="overflow-x-auto">
       <table className="w-full text-sm text-left">
         <thead>
-          <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+          <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider">
             <th className="px-4 py-3">Rank</th>
             <th className="px-4 py-3">Opportunity</th>
             <th className="px-4 py-3">Department</th>
             <th className="px-4 py-3">Impact</th>
             <th
-              className="px-4 py-3 cursor-pointer hover:text-cyan-400 transition-colors select-none"
+              className="px-4 py-3 cursor-pointer hover:text-emerald-600 transition-colors select-none"
               onClick={() => handleSort('effort')}
             >
               Effort{arrow('effort')}
             </th>
             <th
-              className="px-4 py-3 cursor-pointer hover:text-cyan-400 transition-colors select-none"
+              className="px-4 py-3 cursor-pointer hover:text-emerald-600 transition-colors select-none"
               onClick={() => handleSort('hoursSaved')}
             >
               Hours Saved/Week{arrow('hoursSaved')}
@@ -110,11 +110,11 @@ export default function PrioritiesTable({
           {sorted.map((opp, i) => (
             <tr
               key={`${opp.departmentSlug}-${opp.rank}`}
-              className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
+              className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
             >
-              <td className="px-4 py-3 text-slate-500 font-mono">{i + 1}</td>
-              <td className="px-4 py-3 text-white font-medium">{opp.name}</td>
-              <td className="px-4 py-3 text-slate-300">
+              <td className="px-4 py-3 text-slate-400 font-mono">{i + 1}</td>
+              <td className="px-4 py-3 text-slate-900 font-medium">{opp.name}</td>
+              <td className="px-4 py-3 text-slate-600">
                 {opp.departmentName}
               </td>
               <td className="px-4 py-3">
@@ -124,13 +124,13 @@ export default function PrioritiesTable({
                   {opp.impact}
                 </span>
               </td>
-              <td className="px-4 py-3 text-slate-300">{opp.effort}</td>
-              <td className="px-4 py-3 text-slate-300">
+              <td className="px-4 py-3 text-slate-600">{opp.effort}</td>
+              <td className="px-4 py-3 text-slate-600">
                 {opp.parsedTimeSavings.valid
                   ? opp.parsedTimeSavings.display
                   : '—'}
               </td>
-              <td className="px-4 py-3 text-slate-400">
+              <td className="px-4 py-3 text-slate-500">
                 {opp.milestoneName}
               </td>
             </tr>

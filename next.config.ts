@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const nextConfig: NextConfig = {
   output: 'export',
   images: { unoptimized: true },
-  basePath: '/WeVend-Agents',
+  basePath: isProd ? '/WeVend-Agents' : '',
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

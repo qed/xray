@@ -43,13 +43,13 @@ export default function MilestonePipeline({
               <div className="text-center mb-3">
                 <div
                   className={`text-xs font-bold uppercase tracking-wider mb-1 ${
-                    isActive ? 'text-cyan-400' : 'text-slate-600'
+                    isActive ? 'text-emerald-600' : 'text-slate-400'
                   }`}
                 >
                   M{milestone.id}
                 </div>
                 <div
-                  className={`text-xs ${isActive ? 'text-slate-300' : 'text-slate-600'}`}
+                  className={`text-xs ${isActive ? 'text-slate-600' : 'text-slate-400'}`}
                 >
                   {milestone.name}
                 </div>
@@ -58,19 +58,19 @@ export default function MilestonePipeline({
               {/* Pipeline connector + dot */}
               <div className="flex items-center w-full">
                 {idx > 0 && (
-                  <div className="flex-1 h-0.5 bg-slate-700" />
+                  <div className="flex-1 h-0.5 bg-slate-300" />
                 )}
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                     isActive
-                      ? 'bg-cyan-400/20 text-cyan-400 border-2 border-cyan-400'
-                      : 'bg-slate-800 text-slate-600 border-2 border-slate-700'
+                      ? 'bg-emerald-100 text-emerald-600 border-2 border-emerald-600'
+                      : 'bg-slate-100 text-slate-400 border-2 border-slate-300'
                   }`}
                 >
                   {stagePriorities.length}
                 </div>
                 {!isLast && (
-                  <div className="flex-1 h-0.5 bg-slate-700" />
+                  <div className="flex-1 h-0.5 bg-slate-300" />
                 )}
               </div>
 
@@ -79,7 +79,7 @@ export default function MilestonePipeline({
                 {stagePriorities.map((p) => (
                   <div
                     key={p.rank}
-                    className="text-xs text-slate-400 truncate max-w-[140px] mx-auto"
+                    className="text-xs text-slate-500 truncate max-w-[140px] mx-auto"
                     title={p.name}
                   >
                     #{p.rank} {p.name}

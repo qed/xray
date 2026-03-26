@@ -24,11 +24,11 @@ function UnfiledNavLink() {
   return (
     <Link
       href="/unfiled"
-      className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition-colors flex items-center gap-1.5"
+      className="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-colors flex items-center gap-1.5"
     >
       Unfiled
       {unfiledCount > 0 && (
-        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
           {unfiledCount}
         </span>
       )}
@@ -46,16 +46,16 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-white">
-        <nav className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-50">
+      <body className="min-h-full flex flex-col bg-white text-slate-900">
+        <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-6">
                 <Link href="/" className="flex items-center gap-3">
-                  <span className="text-xl font-bold tracking-tight text-cyan-400">
+                  <span className="text-xl font-bold tracking-tight text-emerald-600">
                     X-Ray
                   </span>
-                  <span className="hidden sm:inline text-sm text-slate-400">
+                  <span className="hidden sm:inline text-sm text-slate-500">
                     See everything. Automate what matters.
                   </span>
                 </Link>
@@ -63,13 +63,13 @@ export default function RootLayout({
               <div className="flex items-center gap-1">
                 <Link
                   href="/"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-colors"
                 >
                   Overview
                 </Link>
                 <Link
                   href="/tracker"
-                  className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition-colors"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-colors"
                 >
                   Tracker
                 </Link>
@@ -83,8 +83,8 @@ export default function RootLayout({
             {children}
           </div>
         </main>
-        <footer className="border-t border-slate-800 py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+        <footer className="border-t border-slate-200 py-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-400">
             X-Ray — Powered by WeVend
           </div>
         </footer>

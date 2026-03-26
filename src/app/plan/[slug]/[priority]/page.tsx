@@ -25,8 +25,8 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
   if (!priority) {
     return (
       <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-white mb-4">Priority Not Found</h1>
-        <Link href={`/department/${slug}`} className="text-cyan-400 hover:text-cyan-300">
+        <h1 className="text-2xl font-bold text-slate-900 mb-4">Priority Not Found</h1>
+        <Link href={`/department/${slug}`} className="text-emerald-600 hover:text-emerald-700">
           Back to {department.profile.name}
         </Link>
       </div>
@@ -40,25 +40,25 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
   return (
     <div className="space-y-8">
       {/* Breadcrumb */}
-      <div className="text-sm text-slate-500">
-        <Link href="/" className="hover:text-cyan-400 transition-colors">
+      <div className="text-sm text-slate-400">
+        <Link href="/" className="hover:text-emerald-600 transition-colors">
           Overview
         </Link>
         <span className="mx-2">/</span>
-        <Link href={`/department/${slug}`} className="hover:text-cyan-400 transition-colors">
+        <Link href={`/department/${slug}`} className="hover:text-emerald-600 transition-colors">
           {department.profile.name}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-300">Priority {priority.rank}</span>
+        <span className="text-slate-600">Priority {priority.rank}</span>
       </div>
 
       {/* Header */}
       <section>
         <div className="flex items-center gap-3 mb-2">
-          <span className="flex items-center justify-center w-9 h-9 rounded-full bg-cyan-400/10 text-cyan-400 text-lg font-bold shrink-0">
+          <span className="flex items-center justify-center w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 text-lg font-bold shrink-0">
             {priority.rank}
           </span>
-          <h1 className="text-3xl font-bold text-white">{priority.name}</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{priority.name}</h1>
         </div>
         <p className="text-slate-500 text-sm ml-12">
           {department.profile.name} &middot; Impact: {priority.impact} &middot; Complexity: {priority.complexity}
@@ -77,7 +77,7 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
       <div className="pt-4">
         <Link
           href={`/department/${slug}`}
-          className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
         >
           &larr; Back to {department.profile.name}
         </Link>

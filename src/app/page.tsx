@@ -19,17 +19,17 @@ export default function Home() {
     <div className="space-y-10">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
           Company Overview
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-slate-500 mt-1">
           Automation opportunities across all departments
         </p>
       </div>
 
       {/* Priorities Table — at the top */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">
           All Priorities
         </h2>
         <PrioritiesTable opportunities={allOpportunities} />
@@ -46,8 +46,8 @@ export default function Home() {
       {/* Milestone Chart + Department Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">
             Milestone Distribution
           </h2>
           <MilestoneChart data={chartData} />
@@ -55,7 +55,7 @@ export default function Home() {
 
         {/* Department Cards */}
         <div className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-white mb-4">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">
             Departments
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

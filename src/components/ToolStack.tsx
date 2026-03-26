@@ -10,7 +10,7 @@ export default function ToolStack({ tools }: ToolStackProps) {
       {tools.map((tool, idx) => (
         <span
           key={idx}
-          className="inline-block bg-slate-800 text-slate-300 text-sm px-3 py-1.5 rounded-lg border border-slate-700"
+          className="inline-block bg-slate-100 text-slate-600 text-sm px-3 py-1.5 rounded-lg border border-slate-200"
         >
           {tool}
         </span>

@@ -24,30 +24,30 @@ export default async function DepartmentPage({ params }: { params: Promise<{ slu
   return (
     <div className="space-y-10">
       {/* Breadcrumb */}
-      <div className="text-sm text-slate-500">
-        <Link href="/" className="hover:text-cyan-400 transition-colors">
+      <div className="text-sm text-slate-400">
+        <Link href="/" className="hover:text-emerald-600 transition-colors">
           Overview
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-slate-300">{profile.name}</span>
+        <span className="text-slate-600">{profile.name}</span>
       </div>
 
       {/* Department Header */}
       <section>
-        <h1 className="text-3xl font-bold text-white mb-2">{profile.name}</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">{profile.name}</h1>
         {profile.mission && (
-          <p className="text-slate-400 text-lg max-w-3xl">{profile.mission}</p>
+          <p className="text-slate-500 text-lg max-w-3xl">{profile.mission}</p>
         )}
         {profile.scope && (
-          <p className="text-slate-500 text-sm mt-2 max-w-3xl">{profile.scope}</p>
+          <p className="text-slate-400 text-sm mt-2 max-w-3xl">{profile.scope}</p>
         )}
       </section>
 
       {/* Team Roster */}
       {profile.teamMembers.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold text-cyan-400 mb-4">Team</h2>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+          <h2 className="text-xl font-semibold text-emerald-600 mb-4">Team</h2>
+          <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
             <TeamRoster members={profile.teamMembers} />
           </div>
         </section>
@@ -56,15 +56,15 @@ export default async function DepartmentPage({ params }: { params: Promise<{ slu
       {/* Tool Stack */}
       {profile.tools.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold text-cyan-400 mb-4">Tool Stack</h2>
+          <h2 className="text-xl font-semibold text-emerald-600 mb-4">Tool Stack</h2>
           <ToolStack tools={profile.tools} />
         </section>
       )}
 
       {/* Milestone Pipeline */}
       <section>
-        <h2 className="text-xl font-semibold text-cyan-400 mb-4">Milestone Pipeline</h2>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h2 className="text-xl font-semibold text-emerald-600 mb-4">Milestone Pipeline</h2>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
           <MilestonePipeline
             priorities={priorities}
             statuses={statuses}
@@ -77,7 +77,7 @@ export default async function DepartmentPage({ params }: { params: Promise<{ slu
       {/* Automation Priorities */}
       {priorities.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold text-cyan-400 mb-4">
+          <h2 className="text-xl font-semibold text-emerald-600 mb-4">
             Automation Priorities
           </h2>
           <div className="space-y-3">
