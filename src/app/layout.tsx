@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { getUnfiledPriorities } from '@/lib/aggregator';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,23 @@ export const metadata: Metadata = {
   title: "X-Ray",
   description: "See everything. Automate what matters.",
 };
+
+function UnfiledNavLink() {
+  const unfiledCount = getUnfiledPriorities().length;
+  return (
+    <Link
+      href="/unfiled"
+      className="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-cyan-400 hover:bg-slate-800/50 transition-colors flex items-center gap-1.5"
+    >
+      Unfiled
+      {unfiledCount > 0 && (
+        <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+          {unfiledCount}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 export default function RootLayout({
   children,
@@ -55,6 +73,7 @@ export default function RootLayout({
                 >
                   Tracker
                 </Link>
+                <UnfiledNavLink />
               </div>
             </div>
           </div>
