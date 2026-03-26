@@ -139,7 +139,8 @@ export default function ImplementationPlan({
       {/* Milestone Pipeline */}
       <section className="bg-slate-900 border border-slate-800 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-cyan-400 mb-4">Milestone Definitions</h2>
-        <div className="flex gap-0">
+        <div className="overflow-x-auto">
+        <div className="flex gap-0 min-w-[600px]">
           {milestones.map((milestone, idx) => {
             const isCurrent = milestone.id === currentMilestone;
             const isPast = milestone.id < currentMilestone;
@@ -196,6 +197,7 @@ export default function ImplementationPlan({
               </div>
             );
           })}
+        </div>
         </div>
       </section>
     </div>
