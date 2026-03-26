@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getMilestones, getStatuses, getDepartmentSlugs, parsePriorities, parseProfile } from '../parser';
+import { getMilestones, getStatuses, getDepartmentSlugs, parsePriorities, parseProfile, getDepartment, getAllDepartments } from '../parser';
 
 describe('getMilestones', () => {
   it('returns 4 milestone configs', () => {
@@ -169,5 +169,59 @@ describe('parseProfile — Sales Operations', () => {
 
   it('has tribal knowledge risks', () => {
     expect(profile.tribalKnowledgeRisks.length).toBeGreaterThan(0);
+  });
+});
+
+describe('getDepartment', () => {
+  it('returns Accounting with profile and 9 priorities', () => {
+    const dept = getDepartment('accounting');
+    expect(dept.profile.name).toBe('Accounting');
+    expect(dept.priorities).toHaveLength(9);
+  });
+
+  it('returns Sales Operations with profile and 8 priorities', () => {
+    const dept = getDepartment('sales-operations');
+    expect(dept.profile.name).toBe('Sales Operations');
+    expect(dept.priorities).toHaveLength(8);
+  });
+
+  it('Accounting has quickWins', () => {
+    const dept = getDepartment('accounting');
+    expect(dept.quickWins).toBeDefined();
+    expect(dept.quickWins!.length).toBeGreaterThan(0);
+  });
+
+  it('Accounting has thirtyDayTargets', () => {
+    const dept = getDepartment('accounting');
+    expect(dept.thirtyDayTargets).toBeDefined();
+    expect(dept.thirtyDayTargets!.length).toBeGreaterThan(0);
+  });
+
+  it('Accounting has ninetyDayTargets', () => {
+    const dept = getDepartment('accounting');
+    expect(dept.ninetyDayTargets).toBeDefined();
+    expect(dept.ninetyDayTargets!.length).toBeGreaterThan(0);
+  });
+
+  it('Accounting has scalingRisks', () => {
+    const dept = getDepartment('accounting');
+    expect(dept.scalingRisks).toBeDefined();
+    expect(dept.scalingRisks!.length).toBeGreaterThan(0);
+    expect(dept.scalingRisks![0].area).toBeDefined();
+  });
+});
+
+describe('getAllDepartments', () => {
+  it('returns at least 2 departments', () => {
+    const departments = getAllDepartments();
+    expect(departments.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('each department has profile and priorities', () => {
+    const departments = getAllDepartments();
+    for (const dept of departments) {
+      expect(dept.profile.slug).toBeTruthy();
+      expect(dept.priorities.length).toBeGreaterThan(0);
+    }
   });
 });

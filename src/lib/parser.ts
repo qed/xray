@@ -2,9 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import type {
   AutomationPriority,
+  Department,
   DepartmentProfile,
   MilestoneConfig,
   MilestoneStatus,
+  ScalingRisk,
   TeamMember,
 } from './types';
 
@@ -532,4 +534,110 @@ export function parseProfile(slug: string): DepartmentProfile {
     painPoints,
     tribalKnowledgeRisks,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Timeline & Scaling Risk parsing
+// ---------------------------------------------------------------------------
+
+function parseNumberedList(content: string, sectionName: string): string[] | undefined {
+  // Match section heading flexibly — sectionName may be a prefix of the full heading
+  const regex = new RegExp(
+    `^##\\s+${sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\n]*$`,
+    'im'
+  );
+  const match = regex.exec(content);
+  if (!match) return undefined;
+
+  const start = match.index + match[0].length;
+  // Find next heading
+  const rest = content.slice(start);
+  const nextHeading = rest.match(/\n##\s/);
+  const sectionText = nextHeading ? rest.slice(0, nextHeading.index) : rest;
+
+  const items: string[] = [];
+  const lines = sectionText.split('\n');
+  for (const line of lines) {
+    const itemMatch = line.match(/^\s*\d+\.\s+(.+)/);
+    if (itemMatch) {
+      items.push(itemMatch[1].trim());
+    }
+  }
+
+  return items.length > 0 ? items : undefined;
+}
+
+function parseScalingRisks(content: string): ScalingRisk[] | undefined {
+  // Find the Scaling Risks section
+  const regex = /^##\s+Scaling Risks[^\n]*$/im;
+  const match = regex.exec(content);
+  if (!match) return undefined;
+
+  const start = match.index + match[0].length;
+  const rest = content.slice(start);
+  const nextHeading = rest.match(/\n##\s/);
+  const sectionText = nextHeading ? rest.slice(0, nextHeading.index) : rest;
+
+  // Parse the table
+  const tableLines = sectionText.split('\n').filter((l) => /^\|/.test(l.trim()));
+  if (tableLines.length < 3) return undefined; // header + separator + at least 1 row
+
+  const rows = tableLines.slice(2); // skip header and separator
+  const risks: ScalingRisk[] = [];
+
+  for (const row of rows) {
+    const cells = row
+      .split('|')
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0);
+    if (cells.length < 3) continue;
+
+    // 4-column format: Risk | Current State | What Breaks at Scale | Recommended Action
+    if (cells.length >= 4) {
+      risks.push({
+        area: cells[0],
+        risk: cells[2],        // "What Breaks at Scale"
+        mitigation: cells[3],  // "Recommended Action"
+      });
+    } else {
+      // 3-column fallback
+      risks.push({
+        area: cells[0],
+        risk: cells[1],
+        mitigation: cells[2],
+      });
+    }
+  }
+
+  return risks.length > 0 ? risks : undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Department aggregation
+// ---------------------------------------------------------------------------
+
+export function getDepartment(slug: string): Department {
+  const profile = parseProfile(slug);
+  const priorities = parsePriorities(slug);
+
+  const filePath = path.join(ARTIFACTS_DIR, slug, 'automation_priorities.md');
+  const content = fs.readFileSync(filePath, 'utf-8');
+
+  const quickWins = parseNumberedList(content, 'Quick Wins');
+  const thirtyDayTargets = parseNumberedList(content, '30-Day Targets');
+  const ninetyDayTargets = parseNumberedList(content, '90-Day Targets');
+  const scalingRisks = parseScalingRisks(content);
+
+  return {
+    profile,
+    priorities,
+    quickWins,
+    thirtyDayTargets,
+    ninetyDayTargets,
+    scalingRisks,
+  };
+}
+
+export function getAllDepartments(): Department[] {
+  return getDepartmentSlugs().map((slug) => getDepartment(slug));
 }
