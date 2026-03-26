@@ -1,13 +1,14 @@
-import { getCompanyOverview } from '@/lib/aggregator';
+import { getCompanyOverview, getTopWins } from '@/lib/aggregator';
 import { getMilestones } from '@/lib/parser';
 import ScoreCard from '@/components/ScoreCard';
 import DepartmentCard from '@/components/DepartmentCard';
-import TopWinsTable from '@/components/TopWinsTable';
+import PrioritiesTable from '@/components/PrioritiesTable';
 import MilestoneChart from '@/components/MilestoneChart';
 
 export default function Home() {
   const overview = getCompanyOverview();
   const milestones = getMilestones();
+  const allOpportunities = getTopWins(100);
 
   const chartData = milestones.map((m) => ({
     name: m.name,
@@ -24,6 +25,14 @@ export default function Home() {
         <p className="text-slate-400 mt-1">
           Automation opportunities across all departments
         </p>
+      </div>
+
+      {/* Priorities Table — at the top */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">
+          All Priorities
+        </h2>
+        <PrioritiesTable opportunities={allOpportunities} />
       </div>
 
       {/* Score Cards */}
@@ -55,14 +64,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Top Wins Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">
-          Top Opportunities
-        </h2>
-        <TopWinsTable wins={overview.topWins} />
       </div>
     </div>
   );
