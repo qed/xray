@@ -6,11 +6,74 @@ import type {
   DepartmentProfile,
   MilestoneConfig,
   MilestoneStatus,
+  ParsedTimeSavings,
   ScalingRisk,
   TeamMember,
 } from './types';
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'artifacts');
+
+// ---------------------------------------------------------------------------
+// Time savings parsing
+// ---------------------------------------------------------------------------
+
+const HOURS_PER_WEEK_PATTERN =
+  /(\d+(?:\.\d+)?)\s*(?:[–\-]\s*(\d+(?:\.\d+)?))?\s*(?:hours?|hrs?|h)\s*(?:\/|\s*per\s*)\s*(?:week|wk)\b/i;
+
+const NON_STANDARD_UNIT_PATTERNS = [
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:minutes?|mins?)\s*(?:\/|\s*per\s*)\s*(?:week|wk|day|merchant|partner|request)/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:hours?|hrs?|h)\s*(?:\/|\s*per\s*)\s*(?:month|day|merchant|partner|request)/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:days?)\b/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:hours?|hrs?)\s+(?:of\s+)?(?:\w+\s+)?daily/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:minutes?|mins?)\s*(?:\/|\s*per\s*)\s*(?:day)/i,
+];
+
+const NOT_QUANTIFIED_PATTERNS = [
+  /not quantified/i,
+  /to be quantified/i,
+];
+
+export function parseTimeSavings(raw: string): ParsedTimeSavings {
+  const trimmed = raw.trim();
+
+  // Empty string
+  if (!trimmed) {
+    return { valid: false, rawText: raw, issue: 'no numeric value found' };
+  }
+
+  // Check "not quantified" first
+  for (const pattern of NOT_QUANTIFIED_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return { valid: false, rawText: raw, issue: 'not quantified' };
+    }
+  }
+
+  // Try valid hours/week pattern
+  const hoursMatch = trimmed.match(HOURS_PER_WEEK_PATTERN);
+  if (hoursMatch) {
+    const min = parseFloat(hoursMatch[1]);
+    const max = hoursMatch[2] ? parseFloat(hoursMatch[2]) : min;
+    const midpoint = (min + max) / 2;
+    const display =
+      min === max ? `${min} hrs/wk` : `${min}\u2013${max} hrs/wk`;
+    return { valid: true, min, max, midpoint, display };
+  }
+
+  // Check for non-standard units (has numbers but wrong unit)
+  for (const pattern of NON_STANDARD_UNIT_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return { valid: false, rawText: raw, issue: 'non-standard unit' };
+    }
+  }
+
+  // Has any number at all? If yes but didn't match above, it's non-standard
+  if (/\d/.test(trimmed)) {
+    return { valid: false, rawText: raw, issue: 'non-standard unit' };
+  }
+
+  // No numbers found at all
+  return { valid: false, rawText: raw, issue: 'no numeric value found' };
+}
 
 export function getMilestones(): MilestoneConfig[] {
   const raw = fs.readFileSync(path.join(ARTIFACTS_DIR, 'milestones.json'), 'utf-8');
