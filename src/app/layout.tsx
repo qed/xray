@@ -70,6 +70,12 @@ export default function RootLayout({
                     AI Priorities
                   </Link>
                   <Link
+                    href="/dashboard"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
                     href="/tracker"
                     className="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-colors"
                   >
