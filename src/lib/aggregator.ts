@@ -86,6 +86,69 @@ export function getTopWins(n: number): RankedOpportunity[] {
   return all.slice(0, n);
 }
 
+export function getCompanyOverview(): CompanyOverview {
+  const departments = getAllDepartments();
+  const statuses = getStatuses();
+  const milestones = getMilestones();
+
+  const byMilestoneStage: Record<number, number> = {};
+  for (const milestone of milestones) {
+    byMilestoneStage[milestone.id] = 0;
+  }
+
+  let totalOpportunities = 0;
+  let totalCompleted = 0;
+  const departmentSummaries: DepartmentSummary[] = [];
+
+  for (const dept of departments) {
+    let completed = 0;
+    let inProgress = 0;
+    let notStarted = 0;
+
+    for (const priority of dept.priorities) {
+      totalOpportunities++;
+      const statusKey = `${priority.departmentSlug}/priority-${priority.rank}`;
+      const status = statuses[statusKey];
+      const milestoneStage = status?.milestone ?? 0;
+
+      if (byMilestoneStage[milestoneStage] === undefined) {
+        byMilestoneStage[milestoneStage] = 0;
+      }
+      byMilestoneStage[milestoneStage]++;
+
+      if (milestoneStage === 3) {
+        completed++;
+        totalCompleted++;
+      } else if (milestoneStage > 0) {
+        inProgress++;
+      } else {
+        notStarted++;
+      }
+    }
+
+    departmentSummaries.push({
+      slug: dept.profile.slug,
+      name: dept.profile.name,
+      totalPriorities: dept.priorities.length,
+      completed,
+      inProgress,
+      notStarted,
+      progressPercent:
+        dept.priorities.length > 0
+          ? Math.round((completed / dept.priorities.length) * 100)
+          : 0,
+    });
+  }
+
+  return {
+    totalOpportunities,
+    byMilestoneStage,
+    totalCompleted,
+    departments: departmentSummaries,
+    topWins: getTopWins(10),
+  };
+}
+
 export function getOpportunitiesByMilestone(): Record<number, RankedOpportunity[]> {
   const milestones = getMilestones();
   const all = getAllRankedOpportunities();

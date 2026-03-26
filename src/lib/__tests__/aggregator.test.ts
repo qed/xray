@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTopWins, getOpportunitiesByMilestone } from '../aggregator';
+import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview } from '../aggregator';
 
 describe('getTopWins', () => {
   const wins = getTopWins(20);
@@ -86,5 +86,54 @@ describe('getOpportunitiesByMilestone', () => {
         expect(opp.score).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe('getCompanyOverview', () => {
+  const overview = getCompanyOverview();
+
+  it('has correct total opportunities', () => {
+    expect(overview.totalOpportunities).toBe(17);
+  });
+
+  it('has byMilestoneStage with counts summing to total', () => {
+    const total = Object.values(overview.byMilestoneStage).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+    expect(total).toBe(17);
+  });
+
+  it('has 2 department summaries', () => {
+    expect(overview.departments).toHaveLength(2);
+  });
+
+  it('department summaries have correct totals', () => {
+    const acct = overview.departments.find((d) => d.slug === 'accounting');
+    expect(acct).toBeDefined();
+    expect(acct!.totalPriorities).toBe(9);
+
+    const salesOps = overview.departments.find(
+      (d) => d.slug === 'sales-operations'
+    );
+    expect(salesOps).toBeDefined();
+    expect(salesOps!.totalPriorities).toBe(8);
+  });
+
+  it('department summaries have progress fields', () => {
+    for (const dept of overview.departments) {
+      expect(typeof dept.completed).toBe('number');
+      expect(typeof dept.inProgress).toBe('number');
+      expect(typeof dept.notStarted).toBe('number');
+      expect(typeof dept.progressPercent).toBe('number');
+      expect(dept.completed + dept.inProgress + dept.notStarted).toBe(
+        dept.totalPriorities
+      );
+    }
+  });
+
+  it('has topWins array', () => {
+    expect(overview.topWins.length).toBeGreaterThan(0);
+    expect(overview.topWins.length).toBeLessThanOrEqual(10);
   });
 });
