@@ -2,6 +2,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main, deploy]
+  workflow_dispatch:
 permissions:
   contents: read
   pages: write
@@ -20,8 +21,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: ls -la out || echo "out directory not found"
-      - run: ls -la .next/standalone || echo ".next/standalone not found"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
