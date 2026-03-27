@@ -22,5 +22,16 @@
   "infrastructure-compliance/priority-4": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
   "infrastructure-compliance/priority-5": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
   "infrastructure-compliance/priority-6": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
-  "infrastructure-compliance/priority-7": { "milestone": 0, "updated": "2026-03-27", "notes": "" }
+  "infrastructure-compliance/priority-7": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-1": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-2": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-3": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-4": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-5": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-6": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-7": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-8": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-9": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-10": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "operations/priority-11": { "milestone": 0, "updated": "2026-03-27", "notes": "" }
 }
