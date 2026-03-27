@@ -234,10 +234,6 @@ export function parsePriorities(slug: string): AutomationPriority[] {
 
   for (let i = 0; i < matches.length; i++) {
     const { rank, name, startIndex } = matches[i];
-    const endIndex = i + 1 < matches.length
-      ? matches[i + 1].startIndex - (content.slice(0, matches[i + 1].startIndex).match(/#{2,3}\s+Priority\s+\d+\s*[—:\-–]\s*.+$/m)?.[0]?.length ?? 0)
-      : content.length;
-
     // Get the section text between this priority heading and the next
     const nextHeadingIndex = i + 1 < matches.length
       ? content.lastIndexOf('\n', matches[i + 1].startIndex - matches[i + 1].name.length - 20)
