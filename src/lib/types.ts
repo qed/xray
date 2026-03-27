@@ -161,3 +161,10 @@ export interface StrategicBlocker {
   departments: string[];
   priorities: { departmentName: string; priorityName: string }[];
 }
+
+export interface ToolOverlap {
+  tool: string;
+  departments: string[];
+  departmentSlugs: string[];
+  relatedPriorities: { departmentName: string; priorityName: string }[];
+}

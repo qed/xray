@@ -16,6 +16,7 @@ import type {
   StaffingOverview,
   DepartmentDependency,
   StrategicBlocker,
+  ToolOverlap,
 } from './types';
 
 const IMPACT_SCORES: Record<string, number> = {
@@ -532,4 +533,67 @@ export function getStrategicBlockers(): StrategicBlocker[] {
   }
 
   return blockers;
+}
+
+export function getToolOverlap(): ToolOverlap[] {
+  const departments = getAllDepartments();
+
+  // Build map: tool name -> { departments, slugs }
+  const toolMap = new Map<string, { departments: Set<string>; slugs: Set<string> }>();
+
+  for (const dept of departments) {
+    for (const tool of dept.profile.tools) {
+      const key = tool.toLowerCase();
+      if (!toolMap.has(key)) {
+        toolMap.set(key, { departments: new Set(), slugs: new Set() });
+      }
+      const entry = toolMap.get(key)!;
+      entry.departments.add(dept.profile.name);
+      entry.slugs.add(dept.profile.slug);
+    }
+  }
+
+  // For each tool, find related priorities (those mentioning the tool in dependencies or suggestedApproach)
+  const results: ToolOverlap[] = [];
+
+  for (const [key, entry] of toolMap) {
+    const relatedPriorities: { departmentName: string; priorityName: string }[] = [];
+
+    for (const dept of departments) {
+      for (const priority of dept.priorities) {
+        const searchText = [
+          ...priority.dependencies,
+          priority.suggestedApproach,
+        ].join(' ').toLowerCase();
+
+        if (searchText.includes(key)) {
+          relatedPriorities.push({
+            departmentName: dept.profile.name,
+            priorityName: priority.name,
+          });
+        }
+      }
+    }
+
+    // Use the original casing from the first department that listed the tool
+    const originalName = departments
+      .flatMap((d) => d.profile.tools)
+      .find((t) => t.toLowerCase() === key) ?? key;
+
+    results.push({
+      tool: originalName,
+      departments: [...entry.departments],
+      departmentSlugs: [...entry.slugs],
+      relatedPriorities,
+    });
+  }
+
+  // Sort by department count descending, then alphabetically
+  results.sort((a, b) => {
+    const countDiff = b.departments.length - a.departments.length;
+    if (countDiff !== 0) return countDiff;
+    return a.tool.localeCompare(b.tool);
+  });
+
+  return results;
 }

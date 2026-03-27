@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup, getConsolidatedRisks, getStaffingOverview, getCrossDepartmentDependencies, getStrategicBlockers } from '../aggregator';
+import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup, getConsolidatedRisks, getStaffingOverview, getCrossDepartmentDependencies, getStrategicBlockers, getToolOverlap } from '../aggregator';
 
 describe('getTopWins', () => {
   const wins = getTopWins(40);
@@ -270,6 +270,26 @@ describe('getStrategicBlockers', () => {
       expect(blocker.name).toBeTruthy();
       expect(blocker.affectedPriorityCount).toBeGreaterThanOrEqual(2);
       expect(blocker.departments.length).toBeGreaterThanOrEqual(1);
+    }
+  });
+});
+
+describe('getToolOverlap', () => {
+  it('returns tools with department usage info', () => {
+    const tools = getToolOverlap();
+    expect(tools.length).toBeGreaterThan(0);
+    for (const tool of tools) {
+      expect(tool.tool).toBeTruthy();
+      expect(tool.departments.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('sorts by number of departments (most shared first)', () => {
+    const tools = getToolOverlap();
+    for (let i = 1; i < tools.length; i++) {
+      expect(tools[i].departments.length).toBeLessThanOrEqual(
+        tools[i - 1].departments.length
+      );
     }
   });
 });
