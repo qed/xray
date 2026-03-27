@@ -15,5 +15,12 @@
   "sales-operations/priority-5": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
   "sales-operations/priority-6": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
   "sales-operations/priority-7": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
-  "sales-operations/priority-8": { "milestone": 0, "updated": "2026-03-26", "notes": "" }
+  "sales-operations/priority-8": { "milestone": 0, "updated": "2026-03-26", "notes": "" },
+  "infrastructure-compliance/priority-1": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "infrastructure-compliance/priority-2": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "infrastructure-compliance/priority-3": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "infrastructure-compliance/priority-4": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "infrastructure-compliance/priority-5": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "infrastructure-compliance/priority-6": { "milestone": 0, "updated": "2026-03-27", "notes": "" },
+  "infrastructure-compliance/priority-7": { "milestone": 0, "updated": "2026-03-27", "notes": "" }
 }
