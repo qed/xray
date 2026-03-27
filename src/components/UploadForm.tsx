@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Department {
   slug: string;
@@ -14,6 +14,7 @@ interface UploadFormProps {
 
 export default function UploadForm({ departments }: UploadFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileType, setFileType] = useState<'profile' | 'priorities'>('profile');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -23,6 +24,17 @@ export default function UploadForm({ departments }: UploadFormProps) {
   const [detectedName, setDetectedName] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    const deptParam = searchParams.get('dept');
+    if (typeParam === 'priorities' || typeParam === 'profile') {
+      setFileType(typeParam);
+    }
+    if (deptParam && departments.some((d) => d.slug === deptParam)) {
+      setDepartment(deptParam);
+    }
+  }, [searchParams, departments]);
 
   function detectDepartmentFromFilename(filename: string): string | null {
     // Strip extension
