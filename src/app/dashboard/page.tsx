@@ -1,14 +1,16 @@
-import { getCompanyOverview, getTimeSavingsRollup } from '@/lib/aggregator';
+import { getCompanyOverview, getTimeSavingsRollup, getStrategicBlockers } from '@/lib/aggregator';
 import { getMilestones } from '@/lib/parser';
 import ScoreCard from '@/components/ScoreCard';
 import DepartmentCard from '@/components/DepartmentCard';
 import MilestoneChart from '@/components/MilestoneChart';
 import TimeSavingsRollup from '@/components/TimeSavingsRollup';
+import StrategicBlockers from '@/components/StrategicBlockers';
 
 export default function DashboardPage() {
   const overview = getCompanyOverview();
   const milestones = getMilestones();
   const timeSavings = getTimeSavingsRollup();
+  const blockers = getStrategicBlockers();
 
   const chartData = milestones.map((m) => ({
     name: m.name,
@@ -40,6 +42,14 @@ export default function DashboardPage() {
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Weekly Time Savings</h2>
         <TimeSavingsRollup {...timeSavings} />
       </div>
+
+      {/* Strategic Blockers */}
+      {blockers.length > 0 && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Strategic Blockers</h2>
+          <StrategicBlockers blockers={blockers} />
+        </div>
+      )}
 
       {/* Milestone Chart + Department Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
