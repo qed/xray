@@ -1,12 +1,14 @@
-import { getCompanyOverview } from '@/lib/aggregator';
+import { getCompanyOverview, getTimeSavingsRollup } from '@/lib/aggregator';
 import { getMilestones } from '@/lib/parser';
 import ScoreCard from '@/components/ScoreCard';
 import DepartmentCard from '@/components/DepartmentCard';
 import MilestoneChart from '@/components/MilestoneChart';
+import TimeSavingsRollup from '@/components/TimeSavingsRollup';
 
 export default function DashboardPage() {
   const overview = getCompanyOverview();
   const milestones = getMilestones();
+  const timeSavings = getTimeSavingsRollup();
 
   const chartData = milestones.map((m) => ({
     name: m.name,
@@ -32,6 +34,12 @@ export default function DashboardPage() {
         totalCompleted={overview.totalCompleted}
         milestones={milestones}
       />
+
+      {/* Weekly Time Savings */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">Weekly Time Savings</h2>
+        <TimeSavingsRollup {...timeSavings} />
+      </div>
 
       {/* Milestone Chart + Department Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
