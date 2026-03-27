@@ -10,6 +10,8 @@ import type {
   RankedOpportunity,
   AutomationPriority,
   UnfiledPriority,
+  TimeSavingsRollup,
+  DepartmentTimeSavings,
 } from './types';
 
 const IMPACT_SCORES: Record<string, number> = {
@@ -180,6 +182,55 @@ export function getOpportunitiesByMilestone(): Record<number, RankedOpportunity[
 export function getUnfiledRankedOpportunities(): RankedOpportunity[] {
   const all = getAllRankedOpportunities();
   return all.filter((opp) => !opp.parsedTimeSavings.valid);
+}
+
+export function getTimeSavingsRollup(): TimeSavingsRollup {
+  const departments = getAllDepartments();
+  const statuses = getStatuses();
+
+  let totalPotential = 0;
+  let totalRealized = 0;
+  const byDepartment: DepartmentTimeSavings[] = [];
+
+  for (const dept of departments) {
+    let deptPotential = 0;
+    let deptRealized = 0;
+
+    for (const priority of dept.priorities) {
+      const parsed = parseTimeSavings(priority.estimatedTimeSavings);
+      if (!parsed.valid) continue;
+
+      deptPotential += parsed.midpoint;
+
+      const statusKey = `${priority.departmentSlug}/priority-${priority.rank}`;
+      const status = statuses[statusKey];
+      const milestoneStage = status?.milestone ?? 0;
+
+      if (milestoneStage === 3) {
+        deptRealized += parsed.midpoint;
+      }
+    }
+
+    byDepartment.push({
+      slug: dept.profile.slug,
+      name: dept.profile.name,
+      potentialHoursPerWeek: Math.round(deptPotential * 10) / 10,
+      realizedHoursPerWeek: Math.round(deptRealized * 10) / 10,
+    });
+
+    totalPotential += deptPotential;
+    totalRealized += deptRealized;
+  }
+
+  const roundedPotential = Math.round(totalPotential * 10) / 10;
+  const roundedRealized = Math.round(totalRealized * 10) / 10;
+
+  return {
+    totalPotentialHoursPerWeek: roundedPotential,
+    realizedHoursPerWeek: roundedRealized,
+    remainingHoursPerWeek: Math.round((roundedPotential - roundedRealized) * 10) / 10,
+    byDepartment,
+  };
 }
 
 export function getUnfiledPriorities(): UnfiledPriority[] {

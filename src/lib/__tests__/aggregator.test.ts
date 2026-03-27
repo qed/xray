@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities } from '../aggregator';
+import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup } from '../aggregator';
 
 describe('getTopWins', () => {
   const wins = getTopWins(40);
@@ -170,6 +170,31 @@ describe('parsedTimeSavings on RankedOpportunity', () => {
         );
       }
     }
+  });
+});
+
+describe('getTimeSavingsRollup', () => {
+  it('returns rollup with totals and per-department breakdown', () => {
+    const rollup = getTimeSavingsRollup();
+    expect(rollup.totalPotentialHoursPerWeek).toBeGreaterThan(0);
+    expect(rollup.realizedHoursPerWeek).toBeGreaterThanOrEqual(0);
+    expect(rollup.remainingHoursPerWeek).toBe(
+      rollup.totalPotentialHoursPerWeek - rollup.realizedHoursPerWeek
+    );
+    expect(rollup.byDepartment.length).toBeGreaterThan(0);
+    for (const dept of rollup.byDepartment) {
+      expect(dept.slug).toBeTruthy();
+      expect(dept.name).toBeTruthy();
+      expect(dept.potentialHoursPerWeek).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('excludes priorities with invalid time estimates', () => {
+    const rollup = getTimeSavingsRollup();
+    const deptTotal = rollup.byDepartment.reduce(
+      (sum, d) => sum + d.potentialHoursPerWeek, 0
+    );
+    expect(deptTotal).toBeCloseTo(rollup.totalPotentialHoursPerWeek, 1);
   });
 });
 

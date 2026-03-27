@@ -111,3 +111,17 @@ export interface UnfiledPriority {
   rawText: string;
   issue: string;
 }
+
+export interface TimeSavingsRollup {
+  totalPotentialHoursPerWeek: number;
+  realizedHoursPerWeek: number;
+  remainingHoursPerWeek: number;
+  byDepartment: DepartmentTimeSavings[];
+}
+
+export interface DepartmentTimeSavings {
+  slug: string;
+  name: string;
+  potentialHoursPerWeek: number;
+  realizedHoursPerWeek: number;
+}
