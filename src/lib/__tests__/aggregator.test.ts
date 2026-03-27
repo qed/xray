@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup } from '../aggregator';
+import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup, getConsolidatedRisks, getStaffingOverview } from '../aggregator';
 
 describe('getTopWins', () => {
   const wins = getTopWins(40);
@@ -195,6 +195,31 @@ describe('getTimeSavingsRollup', () => {
       (sum, d) => sum + d.potentialHoursPerWeek, 0
     );
     expect(deptTotal).toBeCloseTo(rollup.totalPotentialHoursPerWeek, 1);
+  });
+});
+
+describe('getConsolidatedRisks', () => {
+  it('returns risks from all departments', () => {
+    const risks = getConsolidatedRisks();
+    expect(risks.length).toBeGreaterThan(0);
+    for (const risk of risks) {
+      expect(['people', 'process', 'tool']).toContain(risk.type);
+      expect(['critical', 'high', 'medium']).toContain(risk.severity);
+      expect(risk.departmentSlug).toBeTruthy();
+      expect(risk.description).toBeTruthy();
+    }
+  });
+});
+
+describe('getStaffingOverview', () => {
+  it('returns staffing data for all departments', () => {
+    const staffing = getStaffingOverview();
+    expect(staffing.length).toBeGreaterThan(0);
+    for (const dept of staffing) {
+      expect(dept.slug).toBeTruthy();
+      expect(dept.teamSize).toBeGreaterThanOrEqual(0);
+      expect(dept.priorityCount).toBeGreaterThan(0);
+    }
   });
 });
 

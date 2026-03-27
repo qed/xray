@@ -125,3 +125,21 @@ export interface DepartmentTimeSavings {
   potentialHoursPerWeek: number;
   realizedHoursPerWeek: number;
 }
+
+export interface ConsolidatedRisk {
+  id: string;
+  description: string;
+  type: 'people' | 'process' | 'tool';
+  severity: 'critical' | 'high' | 'medium';
+  departmentSlug: string;
+  departmentName: string;
+  source: 'spof' | 'pain-point' | 'tribal-knowledge' | 'scaling-risk';
+}
+
+export interface StaffingOverview {
+  slug: string;
+  name: string;
+  teamSize: number;
+  priorityCount: number;
+  prioritiesPerPerson: number;
+}

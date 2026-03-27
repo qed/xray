@@ -12,6 +12,8 @@ import type {
   UnfiledPriority,
   TimeSavingsRollup,
   DepartmentTimeSavings,
+  ConsolidatedRisk,
+  StaffingOverview,
 } from './types';
 
 const IMPACT_SCORES: Record<string, number> = {
@@ -248,4 +250,108 @@ export function getUnfiledPriorities(): UnfiledPriority[] {
         issue: !parsed.valid ? parsed.issue : '',
       };
     });
+}
+
+function classifyRiskType(description: string): 'people' | 'process' | 'tool' {
+  const lower = description.toLowerCase();
+
+  // People-related keywords
+  if (/\b(single|sole|only|one person|one employee)\b/.test(lower)) return 'people';
+  // Check for capitalized names (e.g. "John", "Sarah") — two+ capital-letter words
+  if (/\b[A-Z][a-z]+\s+[A-Z][a-z]+/.test(description)) return 'people';
+
+  // Tool-related keywords
+  if (/\b(software|system|platform|api|tool|excel|quickbooks|crm|erp|database|server|application|app|integration)\b/.test(lower)) return 'tool';
+
+  return 'process';
+}
+
+export function getConsolidatedRisks(): ConsolidatedRisk[] {
+  const departments = getAllDepartments();
+  const risks: ConsolidatedRisk[] = [];
+  let counter = 0;
+
+  for (const dept of departments) {
+    const { profile } = dept;
+
+    for (const spof of profile.singlePointsOfFailure) {
+      counter++;
+      risks.push({
+        id: `risk-${counter}`,
+        description: spof,
+        type: classifyRiskType(spof),
+        severity: 'critical',
+        departmentSlug: profile.slug,
+        departmentName: profile.name,
+        source: 'spof',
+      });
+    }
+
+    for (const pain of profile.painPoints) {
+      counter++;
+      risks.push({
+        id: `risk-${counter}`,
+        description: pain,
+        type: classifyRiskType(pain),
+        severity: 'high',
+        departmentSlug: profile.slug,
+        departmentName: profile.name,
+        source: 'pain-point',
+      });
+    }
+
+    for (const tribal of profile.tribalKnowledgeRisks) {
+      counter++;
+      risks.push({
+        id: `risk-${counter}`,
+        description: tribal,
+        type: classifyRiskType(tribal),
+        severity: 'high',
+        departmentSlug: profile.slug,
+        departmentName: profile.name,
+        source: 'tribal-knowledge',
+      });
+    }
+
+    if (dept.scalingRisks) {
+      for (const sr of dept.scalingRisks) {
+        counter++;
+        const description = `${sr.area}: ${sr.risk}`;
+        risks.push({
+          id: `risk-${counter}`,
+          description,
+          type: classifyRiskType(description),
+          severity: 'medium',
+          departmentSlug: profile.slug,
+          departmentName: profile.name,
+          source: 'scaling-risk',
+        });
+      }
+    }
+  }
+
+  return risks;
+}
+
+export function getStaffingOverview(): StaffingOverview[] {
+  const departments = getAllDepartments();
+  const staffing: StaffingOverview[] = [];
+
+  for (const dept of departments) {
+    const teamSize = dept.profile.teamMembers.length;
+    const priorityCount = dept.priorities.length;
+    const prioritiesPerPerson = teamSize > 0
+      ? Math.round((priorityCount / teamSize) * 10) / 10
+      : 0;
+
+    staffing.push({
+      slug: dept.profile.slug,
+      name: dept.profile.name,
+      teamSize,
+      priorityCount,
+      prioritiesPerPerson,
+    });
+  }
+
+  return staffing;
 }
