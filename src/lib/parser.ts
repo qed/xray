@@ -94,7 +94,7 @@ export function getDepartmentSlugs(): string[] {
       if (!entry.isDirectory()) return false;
       const dirPath = path.join(DEPARTMENTS_DIR, entry.name);
       return (
-        fs.existsSync(path.join(dirPath, 'department_profile.md')) &&
+        fs.existsSync(path.join(dirPath, 'department_profile.md')) ||
         fs.existsSync(path.join(dirPath, 'automation_priorities.md'))
       );
     })
@@ -214,6 +214,7 @@ function parseImpact(val: string): AutomationPriority['impact'] {
 
 export function parsePriorities(slug: string): AutomationPriority[] {
   const filePath = path.join(DEPARTMENTS_DIR, slug, 'automation_priorities.md');
+  if (!fs.existsSync(filePath)) return [];
   const content = fs.readFileSync(filePath, 'utf-8');
 
   const summaryRows = parseSummaryTable(content);
@@ -570,6 +571,11 @@ function extractScope(content: string): string {
 
 export function parseProfile(slug: string): DepartmentProfile {
   const filePath = path.join(DEPARTMENTS_DIR, slug, 'department_profile.md');
+  if (!fs.existsSync(filePath)) {
+    // Return a minimal profile when only automation_priorities.md exists
+    const fallbackName = slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    return { slug, name: fallbackName, mission: '', scope: '', teamMembers: [], tools: [], singlePointsOfFailure: [], painPoints: [], tribalKnowledgeRisks: [] };
+  }
   const content = fs.readFileSync(filePath, 'utf-8');
 
   const name = slugToName(slug, content);
@@ -679,12 +685,18 @@ export function getDepartment(slug: string): Department {
   const priorities = parsePriorities(slug);
 
   const filePath = path.join(DEPARTMENTS_DIR, slug, 'automation_priorities.md');
-  const content = fs.readFileSync(filePath, 'utf-8');
+  let quickWins: string[] | undefined;
+  let thirtyDayTargets: string[] | undefined;
+  let ninetyDayTargets: string[] | undefined;
+  let scalingRisks: ScalingRisk[] | undefined;
 
-  const quickWins = parseNumberedList(content, 'Quick Wins');
-  const thirtyDayTargets = parseNumberedList(content, '30-Day Targets');
-  const ninetyDayTargets = parseNumberedList(content, '90-Day Targets');
-  const scalingRisks = parseScalingRisks(content);
+  if (fs.existsSync(filePath)) {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    quickWins = parseNumberedList(content, 'Quick Wins');
+    thirtyDayTargets = parseNumberedList(content, '30-Day Targets');
+    ninetyDayTargets = parseNumberedList(content, '90-Day Targets');
+    scalingRisks = parseScalingRisks(content);
+  }
 
   return {
     profile,
