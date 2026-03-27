@@ -2,6 +2,8 @@ import { getOpportunitiesByMilestone } from '@/lib/aggregator';
 import { getMilestones } from '@/lib/parser';
 import KanbanBoard from '@/components/KanbanBoard';
 
+export const dynamic = 'force-dynamic';
+
 export default function TrackerPage() {
   const milestones = getMilestones();
   const grouped = getOpportunitiesByMilestone();

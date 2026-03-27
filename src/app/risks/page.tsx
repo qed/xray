@@ -2,6 +2,8 @@ import { getConsolidatedRisks, getStaffingOverview } from '@/lib/aggregator';
 import RiskHeatmap from '@/components/RiskHeatmap';
 import StaffingTable from '@/components/StaffingTable';
 
+export const dynamic = 'force-dynamic';
+
 export default function RisksPage() {
   const risks = getConsolidatedRisks();
   const staffing = getStaffingOverview();

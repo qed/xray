@@ -3,6 +3,8 @@ import { getAllDepartments } from '@/lib/parser';
 import DependencyGraph from '@/components/DependencyGraph';
 import DependencyTable from '@/components/DependencyTable';
 
+export const dynamic = 'force-dynamic';
+
 export default function DependenciesPage() {
   const dependencies = getCrossDepartmentDependencies();
   const departments = getAllDepartments();

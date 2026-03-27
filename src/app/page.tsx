@@ -1,6 +1,8 @@
 import { getTopWins } from '@/lib/aggregator';
 import PrioritiesTable from '@/components/PrioritiesTable';
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const allOpportunities = getTopWins(100);
 

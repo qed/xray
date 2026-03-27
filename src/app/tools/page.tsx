@@ -2,6 +2,8 @@ import { getToolOverlap } from '@/lib/aggregator';
 import { getAllDepartments } from '@/lib/parser';
 import ToolMatrix from '@/components/ToolMatrix';
 
+export const dynamic = 'force-dynamic';
+
 export default function ToolsPage() {
   const tools = getToolOverlap();
   const departments = getAllDepartments();

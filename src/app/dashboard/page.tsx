@@ -6,6 +6,8 @@ import MilestoneChart from '@/components/MilestoneChart';
 import TimeSavingsRollup from '@/components/TimeSavingsRollup';
 import StrategicBlockers from '@/components/StrategicBlockers';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardPage() {
   const overview = getCompanyOverview();
   const milestones = getMilestones();

@@ -7,9 +7,7 @@ import PriorityCard from '@/components/PriorityCard';
 import MilestonePipeline from '@/components/MilestonePipeline';
 import RiskSection from '@/components/RiskSection';
 
-export function generateStaticParams() {
-  return getDepartmentSlugs().map((slug) => ({ slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export default async function DepartmentPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

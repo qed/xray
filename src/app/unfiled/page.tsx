@@ -1,6 +1,8 @@
 import { getUnfiledRankedOpportunities } from '@/lib/aggregator';
 import MissingGapsTable from '@/components/MissingGapsTable';
 
+export const dynamic = 'force-dynamic';
+
 export default function UnfiledPage() {
   const unfiled = getUnfiledRankedOpportunities();
 

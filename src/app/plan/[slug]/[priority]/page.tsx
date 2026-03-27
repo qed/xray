@@ -1,18 +1,8 @@
 import Link from 'next/link';
-import { getDepartmentSlugs, getDepartment, getMilestones, getStatuses } from '@/lib/parser';
+import { getDepartment, getMilestones, getStatuses } from '@/lib/parser';
 import ImplementationPlan from '@/components/ImplementationPlan';
 
-export function generateStaticParams() {
-  const slugs = getDepartmentSlugs();
-  const params: { slug: string; priority: string }[] = [];
-  for (const slug of slugs) {
-    const dept = getDepartment(slug);
-    for (const p of dept.priorities) {
-      params.push({ slug, priority: `priority-${p.rank}` });
-    }
-  }
-  return params;
-}
+export const dynamic = 'force-dynamic';
 
 export default async function PlanPage({ params }: { params: Promise<{ slug: string; priority: string }> }) {
   const { slug, priority: priorityParam } = await params;
