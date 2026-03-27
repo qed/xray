@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import type { RankedOpportunity } from '@/lib/types';
 import { usePriorityModal } from './PriorityModalContext';
@@ -113,8 +113,8 @@ export default function MissingGapsTable({ opportunities }: MissingGapsTableProp
             const key = `${opp.departmentSlug}-${opp.rank}`;
             const isExpanded = expandedKey === key;
             return (
-              <>
-                <tr key={key} className="border-b border-slate-100">
+              <React.Fragment key={key}>
+                <tr className="border-b border-slate-100">
                   <td
                     className="px-4 py-3 text-slate-900 font-medium cursor-pointer hover:text-emerald-700"
                     onClick={() => openModal(opp)}
@@ -146,13 +146,13 @@ export default function MissingGapsTable({ opportunities }: MissingGapsTableProp
                   </td>
                 </tr>
                 {isExpanded && (
-                  <tr key={`${key}-instructions`} className="border-b border-slate-100">
+                  <tr className="border-b border-slate-100">
                     <td colSpan={5} className="p-0">
                       <InstructionPanel opp={opp} />
                     </td>
                   </tr>
                 )}
-              </>
+              </React.Fragment>
             );
           })}
         </tbody>
