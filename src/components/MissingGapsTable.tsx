@@ -11,26 +11,45 @@ interface MissingGapsTableProps {
 
 function buildPrompt(opp: RankedOpportunity): string {
   const rawText = !opp.parsedTimeSavings.valid ? opp.parsedTimeSavings.rawText : '';
-  return `I need help estimating the time savings for an automation priority so I can add it to our tracking system.
+  const deps = opp.dependencies.length > 0 ? opp.dependencies.join(', ') : 'None listed';
+  return `I need help estimating the time savings for an automation priority so I can add it to our tracking system. I'll give you all the context we have, then you ask me questions to fill in the gaps.
 
-Here is the priority information:
+## Priority Details
 
-- Department: ${opp.departmentName}
-- Priority #${opp.rank}: ${opp.name}
-- Impact: ${opp.impact}
-- Complexity: ${opp.complexity}
-- Effort: ${opp.effort}
-- What to automate: ${opp.whatToAutomate}
-- Current state: ${opp.currentState}
-${rawText ? `- Current time estimate text (not in valid format): "${rawText}"` : '- No time estimate provided yet'}
+- **Department:** ${opp.departmentName}
+- **Priority #${opp.rank}:** ${opp.name}
+- **Impact:** ${opp.impact} | **Complexity:** ${opp.complexity} | **Effort:** ${opp.effort}
 
-Please ask me questions ONE AT A TIME to understand:
-1. What specific tasks are involved in this process today
+## What To Automate
+${opp.whatToAutomate}
+
+## Current State
+${opp.currentState}
+
+## Why It Matters
+${opp.whyItMatters}
+${opp.suggestedApproach ? `
+## Suggested Approach
+${opp.suggestedApproach}
+` : ''}
+## Success Criteria
+${opp.successCriteria}
+
+## Dependencies
+${deps}
+
+## Current Time Estimate
+${rawText ? `"${rawText}" (not in a valid hours/week format)` : 'No time estimate provided yet.'}
+
+---
+
+Based on all the above context, ask me questions ONE AT A TIME to understand:
+1. What specific tasks are involved in this process today and how many people do them
 2. How often these tasks are performed (daily, weekly, monthly)
 3. How long each occurrence takes manually
 4. What percentage of the work could realistically be automated
 
-After gathering enough information, calculate the estimated hours saved per week and generate a corrected markdown snippet for this priority's "Estimated Time Savings" field in the format: **Estimated Time Savings:** X-Y hours/week
+Use the context above to make your questions specific — don't ask me things that are already answered above. After gathering enough information, calculate the estimated hours saved per week and generate a corrected markdown snippet for this priority's "Estimated Time Savings" field in the format: **Estimated Time Savings:** X-Y hours/week
 
 Only output the corrected line at the end, so I can update the markdown file.`;
 }
