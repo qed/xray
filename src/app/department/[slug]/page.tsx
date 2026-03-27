@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDepartment, getDepartmentSlugs, getMilestones, getStatuses } from '@/lib/parser';
+import { getDepartment, getMilestones, getStatuses } from '@/lib/parser';
 import { getTopWins } from '@/lib/aggregator';
 import TeamRoster from '@/components/TeamRoster';
 import ToolStack from '@/components/ToolStack';
