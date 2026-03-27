@@ -2,15 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities } from '../aggregator';
 
 describe('getTopWins', () => {
-  const wins = getTopWins(20);
+  const wins = getTopWins(40);
 
   it('returns all 17 opportunities when n >= 17', () => {
-    expect(wins).toHaveLength(17);
+    expect(wins).toHaveLength(35);
   });
 
   it('returns n opportunities when n < total', () => {
-    const top5 = getTopWins(5);
-    expect(top5).toHaveLength(5);
+    const top10 = getTopWins(10);
+    expect(top10).toHaveLength(10);
   });
 
   it('is sorted by score descending', () => {
@@ -68,7 +68,7 @@ describe('getOpportunitiesByMilestone', () => {
       (sum, arr) => sum + arr.length,
       0
     );
-    expect(total).toBe(17);
+    expect(total).toBe(35);
   });
 
   it('sales-ops priority-1 is in milestone 1', () => {
@@ -93,7 +93,7 @@ describe('getCompanyOverview', () => {
   const overview = getCompanyOverview();
 
   it('has correct total opportunities', () => {
-    expect(overview.totalOpportunities).toBe(17);
+    expect(overview.totalOpportunities).toBe(35);
   });
 
   it('has byMilestoneStage with counts summing to total', () => {
@@ -101,11 +101,11 @@ describe('getCompanyOverview', () => {
       (sum, count) => sum + count,
       0
     );
-    expect(total).toBe(17);
+    expect(total).toBe(35);
   });
 
-  it('has 2 department summaries', () => {
-    expect(overview.departments).toHaveLength(2);
+  it('has 4 department summaries', () => {
+    expect(overview.departments).toHaveLength(4);
   });
 
   it('department summaries have correct totals', () => {
@@ -139,7 +139,7 @@ describe('getCompanyOverview', () => {
 });
 
 describe('parsedTimeSavings on RankedOpportunity', () => {
-  const wins = getTopWins(20);
+  const wins = getTopWins(40);
 
   it('every opportunity has parsedTimeSavings', () => {
     for (const win of wins) {
@@ -193,9 +193,9 @@ describe('getUnfiledPriorities', () => {
     }
   });
 
-  it('unfiled count + valid count equals 17', () => {
-    const allWins = getTopWins(20);
+  it('unfiled count + valid count equals 35', () => {
+    const allWins = getTopWins(40);
     const validCount = allWins.filter((w) => w.parsedTimeSavings.valid).length;
-    expect(unfiled.length + validCount).toBe(17);
+    expect(unfiled.length + validCount).toBe(35);
   });
 });

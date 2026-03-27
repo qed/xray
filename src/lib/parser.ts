@@ -12,6 +12,7 @@ import type {
 } from './types';
 
 const ARTIFACTS_DIR = path.join(process.cwd(), 'artifacts');
+const DEPARTMENTS_DIR = path.join(ARTIFACTS_DIR, 'WeVend X-Ray');
 
 // ---------------------------------------------------------------------------
 // Time savings parsing
@@ -87,11 +88,11 @@ export function getStatuses(): Record<string, MilestoneStatus> {
 }
 
 export function getDepartmentSlugs(): string[] {
-  const entries = fs.readdirSync(ARTIFACTS_DIR, { withFileTypes: true });
+  const entries = fs.readdirSync(DEPARTMENTS_DIR, { withFileTypes: true });
   return entries
     .filter((entry) => {
       if (!entry.isDirectory()) return false;
-      const dirPath = path.join(ARTIFACTS_DIR, entry.name);
+      const dirPath = path.join(DEPARTMENTS_DIR, entry.name);
       return (
         fs.existsSync(path.join(dirPath, 'department_profile.md')) &&
         fs.existsSync(path.join(dirPath, 'automation_priorities.md'))
@@ -113,47 +114,34 @@ interface SummaryRow {
 
 function parseSummaryTable(content: string): SummaryRow[] {
   const rows: SummaryRow[] = [];
-  // Match markdown table rows (skip header and separator)
-  const tableRegex = /\|[^\n]+\|/g;
-  const lines = content.split('\n').filter((l) => /^\|/.test(l.trim()));
 
-  // Skip header row and separator row
-  for (let i = 2; i < lines.length; i++) {
-    const cells = lines[i]
-      .split('|')
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
-    if (cells.length < 4) continue;
+  // Find the Priority Summary table by locating a table whose header has
+  // both a Rank/Priority column and a Complexity or Impact column
+  const tableSection = findTableSection(content, (headers) =>
+    headers.some((h) => /^(rank|priority)$/i.test(h)) &&
+    (headers.some((h) => /^complexity$/i.test(h)) || headers.some((h) => /^impact$/i.test(h)))
+  );
+  if (!tableSection) return rows;
 
-    // Detect table format by checking header
-    const headerCells = lines[0]
-      .split('|')
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
+  const headerCells = parseTableHeaders(tableSection);
+  const dataRows = parseTableRows(tableSection);
 
-    const hasEstEffort = headerCells.some((h) => /est\.?\s*effort/i.test(h));
+  // Dynamically find column indices by header name
+  const rankIdx = headerCells.findIndex((h) => /^(rank|priority)$/i.test(h));
+  const complexityIdx = headerCells.findIndex((h) => /^complexity$/i.test(h));
+  const impactIdx = headerCells.findIndex((h) => /^impact$/i.test(h));
+  const effortIdx = headerCells.findIndex((h) => /est\.?\s*(time\s+saved|effort)/i.test(h));
 
-    if (hasEstEffort) {
-      // Accounting format: Rank | Opportunity | Est. Effort | Complexity | Impact
-      const rank = parseInt(cells[0], 10);
-      if (isNaN(rank)) continue;
-      rows.push({
-        rank,
-        effort: cells[2],
-        complexity: cells[3],
-        impact: cells[4],
-      });
-    } else {
-      // Sales Ops format: Priority | Item | Status | Complexity | Time Impact
-      const rank = parseInt(cells[0], 10);
-      if (isNaN(rank)) continue;
-      rows.push({
-        rank,
-        effort: 'Medium',   // default
-        complexity: cells[3],
-        impact: 'High',     // default
-      });
-    }
+  for (const cells of dataRows) {
+    const rank = parseInt(cells[rankIdx] ?? '', 10);
+    if (isNaN(rank)) continue;
+
+    rows.push({
+      rank,
+      effort: effortIdx >= 0 && cells[effortIdx] ? cells[effortIdx] : 'Medium',
+      complexity: complexityIdx >= 0 && cells[complexityIdx] ? cells[complexityIdx] : 'Medium',
+      impact: impactIdx >= 0 && cells[impactIdx] ? cells[impactIdx] : 'High',
+    });
   }
   return rows;
 }
@@ -225,7 +213,7 @@ function parseImpact(val: string): AutomationPriority['impact'] {
 }
 
 export function parsePriorities(slug: string): AutomationPriority[] {
-  const filePath = path.join(ARTIFACTS_DIR, slug, 'automation_priorities.md');
+  const filePath = path.join(DEPARTMENTS_DIR, slug, 'automation_priorities.md');
   const content = fs.readFileSync(filePath, 'utf-8');
 
   const summaryRows = parseSummaryTable(content);
@@ -466,8 +454,8 @@ function parseSPOFs(content: string): string[] {
 }
 
 function parsePainPointsList(content: string): string[] {
-  // Try "Time Sinks" section (accounting format)
-  const timeSinksSection = extractSectionContent(content, 'Time Sinks');
+  // Try "Time Sinks" section (accounting / infrastructure / operations format)
+  const timeSinksSection = extractSectionContent(content, 'Time Sinks[^\\n]*');
   if (timeSinksSection) {
     const rows = parseTableRows(timeSinksSection);
     if (rows.length > 0) {
@@ -546,6 +534,17 @@ function parseTribalKnowledge(content: string): string[] {
     }
   }
 
+  // Try "Tribal Knowledge" section (infrastructure / operations format — bullet list or plain text)
+  const tribalSection3 = extractSectionContent(content, 'Tribal Knowledge');
+  if (tribalSection3) {
+    const bullets = parseBulletPoints(tribalSection3);
+    if (bullets.length > 0) return bullets;
+
+    // Plain text (e.g. "No significant tribal knowledge gaps...")
+    const trimmed = tribalSection3.trim();
+    if (trimmed.length > 0) return [trimmed];
+  }
+
   return [];
 }
 
@@ -574,7 +573,7 @@ function extractScope(content: string): string {
 }
 
 export function parseProfile(slug: string): DepartmentProfile {
-  const filePath = path.join(ARTIFACTS_DIR, slug, 'department_profile.md');
+  const filePath = path.join(DEPARTMENTS_DIR, slug, 'department_profile.md');
   const content = fs.readFileSync(filePath, 'utf-8');
 
   const name = slugToName(slug, content);
@@ -683,7 +682,7 @@ export function getDepartment(slug: string): Department {
   const profile = parseProfile(slug);
   const priorities = parsePriorities(slug);
 
-  const filePath = path.join(ARTIFACTS_DIR, slug, 'automation_priorities.md');
+  const filePath = path.join(DEPARTMENTS_DIR, slug, 'automation_priorities.md');
   const content = fs.readFileSync(filePath, 'utf-8');
 
   const quickWins = parseNumberedList(content, 'Quick Wins');

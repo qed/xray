@@ -11,9 +11,9 @@ describe('getMilestones', () => {
 });
 
 describe('getStatuses', () => {
-  it('returns 17 status entries', () => {
+  it('returns 35 status entries', () => {
     const statuses = getStatuses();
-    expect(Object.keys(statuses)).toHaveLength(17);
+    expect(Object.keys(statuses)).toHaveLength(35);
   });
 
   it('sales-ops priority-1 is at milestone 1', () => {
@@ -23,11 +23,13 @@ describe('getStatuses', () => {
 });
 
 describe('getDepartmentSlugs', () => {
-  it('discovers accounting and sales-operations', () => {
+  it('discovers all 4 departments', () => {
     const slugs = getDepartmentSlugs();
     expect(slugs).toContain('accounting');
     expect(slugs).toContain('sales-operations');
-    expect(slugs.length).toBeGreaterThanOrEqual(2);
+    expect(slugs).toContain('infrastructure-compliance');
+    expect(slugs).toContain('operations');
+    expect(slugs).toHaveLength(4);
   });
 });
 
@@ -109,6 +111,63 @@ describe('parsePriorities — Sales Operations', () => {
   });
 });
 
+describe('parsePriorities — Infrastructure & Compliance', () => {
+  const priorities = parsePriorities('infrastructure-compliance');
+
+  it('parses 7 priorities', () => {
+    expect(priorities).toHaveLength(7);
+  });
+
+  it('priority 1 has correct name', () => {
+    expect(priorities[0].name).toBe('Alert Noise Reduction');
+  });
+
+  it('priority 1 has correct complexity and impact from summary table', () => {
+    expect(priorities[0].complexity).toBe('Low');
+    expect(priorities[0].impact).toBe('High');
+  });
+
+  it('has whatToAutomate populated', () => {
+    expect(priorities[0].whatToAutomate.length).toBeGreaterThan(10);
+  });
+
+  it('has suggestedApproach populated', () => {
+    expect(priorities[0].suggestedApproach.length).toBeGreaterThan(10);
+  });
+
+  it('sets departmentSlug', () => {
+    expect(priorities[0].departmentSlug).toBe('infrastructure-compliance');
+  });
+});
+
+describe('parsePriorities — Operations', () => {
+  const priorities = parsePriorities('operations');
+
+  it('parses 11 priorities', () => {
+    expect(priorities).toHaveLength(11);
+  });
+
+  it('priority 1 has correct name', () => {
+    expect(priorities[0].name).toBe('Daily Operational Digest');
+  });
+
+  it('priority 1 has correct complexity and impact from summary table', () => {
+    expect(priorities[0].impact).toBe('High');
+  });
+
+  it('priority 10 has Critical impact', () => {
+    expect(priorities[9].impact).toBe('Critical');
+  });
+
+  it('has whatToAutomate populated', () => {
+    expect(priorities[0].whatToAutomate.length).toBeGreaterThan(10);
+  });
+
+  it('sets departmentSlug', () => {
+    expect(priorities[0].departmentSlug).toBe('operations');
+  });
+});
+
 describe('parseProfile — Accounting', () => {
   const profile = parseProfile('accounting');
 
@@ -172,6 +231,69 @@ describe('parseProfile — Sales Operations', () => {
   });
 });
 
+describe('parseProfile — Infrastructure & Compliance', () => {
+  const profile = parseProfile('infrastructure-compliance');
+
+  it('has correct slug and name', () => {
+    expect(profile.slug).toBe('infrastructure-compliance');
+    expect(profile.name).toBe('Infrastructure & Compliance');
+  });
+
+  it('has mission populated', () => {
+    expect(profile.mission.length).toBeGreaterThan(10);
+  });
+
+  it('has team members', () => {
+    expect(profile.teamMembers.length).toBeGreaterThanOrEqual(2);
+    expect(profile.teamMembers[0].name).toMatch(/Reza/);
+  });
+
+  it('has tools', () => {
+    expect(profile.tools.length).toBeGreaterThan(0);
+  });
+
+  it('has single points of failure', () => {
+    expect(profile.singlePointsOfFailure.length).toBeGreaterThan(0);
+  });
+
+  it('has pain points', () => {
+    expect(profile.painPoints.length).toBeGreaterThan(0);
+  });
+});
+
+describe('parseProfile — Operations', () => {
+  const profile = parseProfile('operations');
+
+  it('has correct slug and name', () => {
+    expect(profile.slug).toBe('operations');
+    expect(profile.name).toBe('Operations');
+  });
+
+  it('has mission populated', () => {
+    expect(profile.mission.length).toBeGreaterThan(10);
+  });
+
+  it('has team members', () => {
+    expect(profile.teamMembers.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('has tools', () => {
+    expect(profile.tools.length).toBeGreaterThan(0);
+  });
+
+  it('has single points of failure', () => {
+    expect(profile.singlePointsOfFailure.length).toBeGreaterThan(0);
+  });
+
+  it('has pain points', () => {
+    expect(profile.painPoints.length).toBeGreaterThan(0);
+  });
+
+  it('has tribal knowledge risks', () => {
+    expect(profile.tribalKnowledgeRisks.length).toBeGreaterThan(0);
+  });
+});
+
 describe('getDepartment', () => {
   it('returns Accounting with profile and 9 priorities', () => {
     const dept = getDepartment('accounting');
@@ -212,9 +334,9 @@ describe('getDepartment', () => {
 });
 
 describe('getAllDepartments', () => {
-  it('returns at least 2 departments', () => {
+  it('returns all 4 departments', () => {
     const departments = getAllDepartments();
-    expect(departments.length).toBeGreaterThanOrEqual(2);
+    expect(departments).toHaveLength(4);
   });
 
   it('each department has profile and priorities', () => {
