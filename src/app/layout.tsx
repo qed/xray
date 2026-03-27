@@ -104,6 +104,12 @@ export default function RootLayout({
                     Tools
                   </Link>
                   <MissingGapsNavLink />
+                  <Link
+                    href="/upload"
+                    className="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-colors"
+                  >
+                    Upload
+                  </Link>
                 </div>
               </div>
             </div>
