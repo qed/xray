@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup, getConsolidatedRisks, getStaffingOverview } from '../aggregator';
+import { getTopWins, getOpportunitiesByMilestone, getCompanyOverview, getUnfiledPriorities, getTimeSavingsRollup, getConsolidatedRisks, getStaffingOverview, getCrossDepartmentDependencies, getStrategicBlockers } from '../aggregator';
 
 describe('getTopWins', () => {
   const wins = getTopWins(40);
@@ -247,5 +247,29 @@ describe('getUnfiledPriorities', () => {
     const allWins = getTopWins(40);
     const validCount = allWins.filter((w) => w.parsedTimeSavings.valid).length;
     expect(unfiled.length + validCount).toBe(35);
+  });
+});
+
+describe('getCrossDepartmentDependencies', () => {
+  it('returns dependencies between departments', () => {
+    const deps = getCrossDepartmentDependencies();
+    expect(Array.isArray(deps)).toBe(true);
+    for (const dep of deps) {
+      expect(dep.sourceDepartment).toBeTruthy();
+      expect(dep.targetDepartment).toBeTruthy();
+      expect(dep.description).toBeTruthy();
+    }
+  });
+});
+
+describe('getStrategicBlockers', () => {
+  it('returns blockers affecting multiple priorities', () => {
+    const blockers = getStrategicBlockers();
+    expect(Array.isArray(blockers)).toBe(true);
+    for (const blocker of blockers) {
+      expect(blocker.name).toBeTruthy();
+      expect(blocker.affectedPriorityCount).toBeGreaterThanOrEqual(2);
+      expect(blocker.departments.length).toBeGreaterThanOrEqual(1);
+    }
   });
 });

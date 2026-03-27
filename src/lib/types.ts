@@ -143,3 +143,21 @@ export interface StaffingOverview {
   priorityCount: number;
   prioritiesPerPerson: number;
 }
+
+export interface DepartmentDependency {
+  id: string;
+  sourceDepartment: string;
+  sourceDepartmentName: string;
+  targetDepartment: string;
+  targetDepartmentName: string;
+  description: string;
+  priorityNames: string[];
+}
+
+export interface StrategicBlocker {
+  id: string;
+  name: string;
+  affectedPriorityCount: number;
+  departments: string[];
+  priorities: { departmentName: string; priorityName: string }[];
+}

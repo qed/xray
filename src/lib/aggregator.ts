@@ -14,6 +14,8 @@ import type {
   DepartmentTimeSavings,
   ConsolidatedRisk,
   StaffingOverview,
+  DepartmentDependency,
+  StrategicBlocker,
 } from './types';
 
 const IMPACT_SCORES: Record<string, number> = {
@@ -354,4 +356,180 @@ export function getStaffingOverview(): StaffingOverview[] {
   }
 
   return staffing;
+}
+
+export function getCrossDepartmentDependencies(): DepartmentDependency[] {
+  const departments = getAllDepartments();
+  const deps: DepartmentDependency[] = [];
+  let counter = 0;
+
+  // Build lookup of department names and slugs for matching
+  const deptLookup: { slug: string; name: string; lowerName: string; lowerSlug: string }[] =
+    departments.map((d) => ({
+      slug: d.profile.slug,
+      name: d.profile.name,
+      lowerName: d.profile.name.toLowerCase(),
+      lowerSlug: d.profile.slug.toLowerCase(),
+    }));
+
+  for (const dept of departments) {
+    for (const priority of dept.priorities) {
+      for (const depText of priority.dependencies) {
+        const lowerDep = depText.toLowerCase();
+
+        for (const target of deptLookup) {
+          // Skip self-references
+          if (target.slug === dept.profile.slug) continue;
+
+          // Check if dependency text references the target department
+          if (
+            lowerDep.includes(target.lowerName) ||
+            lowerDep.includes(target.lowerSlug)
+          ) {
+            // Check if we already have this source->target pair
+            const existing = deps.find(
+              (d) =>
+                d.sourceDepartment === dept.profile.slug &&
+                d.targetDepartment === target.slug
+            );
+
+            if (existing) {
+              if (!existing.priorityNames.includes(priority.name)) {
+                existing.priorityNames.push(priority.name);
+              }
+            } else {
+              counter++;
+              deps.push({
+                id: `dep-${counter}`,
+                sourceDepartment: dept.profile.slug,
+                sourceDepartmentName: dept.profile.name,
+                targetDepartment: target.slug,
+                targetDepartmentName: target.name,
+                description: depText,
+                priorityNames: [priority.name],
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return deps;
+}
+
+const STOP_WORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+  'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
+  'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+  'could', 'should', 'may', 'might', 'shall', 'can', 'need', 'must',
+  'it', 'its', 'this', 'that', 'these', 'those', 'i', 'we', 'you', 'he',
+  'she', 'they', 'me', 'us', 'him', 'her', 'them', 'my', 'our', 'your',
+  'his', 'their', 'not', 'no', 'nor', 'as', 'if', 'then', 'than',
+  'so', 'up', 'out', 'about', 'into', 'over', 'after', 'before',
+  'between', 'under', 'during', 'each', 'all', 'both', 'few', 'more',
+  'most', 'other', 'some', 'such', 'only', 'own', 'same', 'also',
+  'very', 'just', 'because', 'through', 'while', 'where', 'when',
+  'what', 'which', 'who', 'how', 'any', 'many', 'much', 'new',
+  'e.g.', 'etc', 'e.g', 'ie', 'i.e.',
+]);
+
+export function getStrategicBlockers(): StrategicBlocker[] {
+  const departments = getAllDepartments();
+
+  // Collect all dependency strings with context
+  const depEntries: { text: string; departmentName: string; priorityName: string; deptSlug: string }[] = [];
+
+  for (const dept of departments) {
+    for (const priority of dept.priorities) {
+      for (const depText of priority.dependencies) {
+        depEntries.push({
+          text: depText,
+          departmentName: dept.profile.name,
+          priorityName: priority.name,
+          deptSlug: dept.profile.slug,
+        });
+      }
+    }
+  }
+
+  // Extract bigrams from text
+  function getBigrams(text: string): string[] {
+    const words = text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .split(/\s+/)
+      .filter((w) => w.length > 1 && !STOP_WORDS.has(w));
+
+    const bigrams: string[] = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      bigrams.push(`${words[i]} ${words[i + 1]}`);
+    }
+    return bigrams;
+  }
+
+  // Group by bigram
+  const bigramMap = new Map<
+    string,
+    { departmentName: string; priorityName: string; deptSlug: string }[]
+  >();
+
+  for (const entry of depEntries) {
+    const bigrams = getBigrams(entry.text);
+    const seen = new Set<string>();
+    for (const bigram of bigrams) {
+      if (seen.has(bigram)) continue;
+      seen.add(bigram);
+
+      const key = bigram;
+      if (!bigramMap.has(key)) {
+        bigramMap.set(key, []);
+      }
+      const list = bigramMap.get(key)!;
+      // Deduplicate by priority name + department
+      const alreadyAdded = list.some(
+        (l) =>
+          l.priorityName === entry.priorityName &&
+          l.deptSlug === entry.deptSlug
+      );
+      if (!alreadyAdded) {
+        list.push({
+          departmentName: entry.departmentName,
+          priorityName: entry.priorityName,
+          deptSlug: entry.deptSlug,
+        });
+      }
+    }
+  }
+
+  // Filter to bigrams appearing in 2+ priorities, sort by count
+  const blockers: StrategicBlocker[] = [];
+  let counter = 0;
+
+  const sorted = [...bigramMap.entries()]
+    .filter(([, entries]) => entries.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 5);
+
+  for (const [bigram, entries] of sorted) {
+    counter++;
+    const capitalized = bigram
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    const departments = [...new Set(entries.map((e) => e.departmentName))];
+    blockers.push({
+      id: `blocker-${counter}`,
+      name: capitalized,
+      affectedPriorityCount: entries.length,
+      departments,
+      priorities: entries.map((e) => ({
+        departmentName: e.departmentName,
+        priorityName: e.priorityName,
+      })),
+    });
+  }
+
+  return blockers;
 }
