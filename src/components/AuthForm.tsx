@@ -13,15 +13,12 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      setStatus('Authenticating...');
       const supabase = createClient();
 
       if (mode === 'signup') {
@@ -31,8 +28,6 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) { setError(signInError.message); setLoading(false); return; }
       }
-
-      setStatus('Auth OK, finding your org...');
 
       if (inviteCode) {
         window.location.href = `/invite/${inviteCode}`;
@@ -45,7 +40,7 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
         .limit(1);
 
       if (memErr) {
-        setStatus(`Query error: ${memErr.message}`);
+        setError(memErr.message);
         setLoading(false);
         return;
       }
@@ -54,13 +49,11 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const slug = (memberships[0] as any).organization?.slug;
         if (slug) {
-          setStatus(`Redirecting to ${slug}...`);
           window.location.href = `/org/${slug}/priorities`;
           return;
         }
       }
 
-      setStatus('Redirecting to join...');
       window.location.href = '/join';
     } catch (err) {
       setError(`Unexpected error: ${err}`);
@@ -81,7 +74,6 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
           className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="At least 6 characters" />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {status && <p className="text-sm text-blue-600">{status}</p>}
       <button type="submit" disabled={loading}
         className="w-full py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-40">
         {loading ? 'Loading...' : mode === 'signup' ? 'Sign Up' : 'Log In'}
