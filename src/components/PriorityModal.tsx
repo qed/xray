@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { RankedOpportunity } from '@/lib/types';
 
@@ -49,6 +50,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function PriorityModal({ opportunity, onClose }: PriorityModalProps) {
+  const params = useParams();
+  const orgSlug = params?.orgSlug as string | undefined;
+  const prefix = orgSlug ? `/org/${orgSlug}` : '';
+
   useEffect(() => {
     if (!opportunity) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -156,7 +161,7 @@ export default function PriorityModal({ opportunity, onClose }: PriorityModalPro
           {/* Implementation Plan link */}
           <div className="pt-2 border-t border-slate-100">
             <Link
-              href={`/plan/${opp.departmentSlug}/priority-${opp.rank}`}
+              href={`${prefix}/plan/${opp.departmentSlug}/priority-${opp.rank}`}
               className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
               onClick={onClose}
             >

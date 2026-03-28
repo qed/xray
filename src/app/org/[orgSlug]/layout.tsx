@@ -1,0 +1,87 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { getOrgBySlug, getUserOrgs, getUserRole, getUnfiledRankedOpportunities } from '@/lib/db';
+import OrgSwitcher from '@/components/OrgSwitcher';
+import UserMenu from '@/components/UserMenu';
+import { PriorityModalProvider } from '@/components/PriorityModalContext';
+
+export default async function OrgLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: Promise<{ orgSlug: string }>;
+}) {
+  const { orgSlug } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+  const org = await getOrgBySlug(orgSlug);
+  if (!org) redirect('/join');
+
+  const role = await getUserRole(org.id, user.id);
+  if (!role) redirect('/join');
+
+  const userOrgs = await getUserOrgs(user.id);
+  const allOrgs = userOrgs.map((m) => ({
+    slug: m.organization.slug,
+    name: m.organization.name,
+  }));
+
+  const unfiled = await getUnfiledRankedOpportunities(org.id);
+  const unfiledCount = unfiled.length;
+
+  const base = `/org/${orgSlug}`;
+
+  const navLinks = [
+    { href: `${base}/priorities`, label: 'AI Priorities' },
+    { href: `${base}/dashboard`, label: 'Dashboard' },
+    { href: `${base}/tracker`, label: 'Tracker' },
+    { href: `${base}/risks`, label: 'Risks' },
+    { href: `${base}/dependencies`, label: 'Dependencies' },
+    { href: `${base}/tools`, label: 'Tools' },
+    { href: `${base}/unfiled`, label: 'Missing Gaps', badge: unfiledCount > 0 ? unfiledCount : undefined },
+    { href: `${base}/upload`, label: 'Upload' },
+  ];
+
+  return (
+    <PriorityModalProvider>
+      <div className="min-h-screen bg-white">
+        <nav className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800">
+          <div className="max-w-screen-2xl mx-auto px-4 flex items-center h-14 gap-6">
+            <Link href={base} className="text-white font-bold text-lg tracking-tight shrink-0">
+              X-Ray
+            </Link>
+            <OrgSwitcher currentOrg={{ slug: orgSlug, name: org.name }} allOrgs={allOrgs} />
+
+            <div className="flex-1 flex items-center gap-1 overflow-x-auto">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-3 py-1.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition-colors whitespace-nowrap"
+                >
+                  {link.label}
+                  {link.badge !== undefined && (
+                    <span className="ml-1.5 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-full">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+
+            <UserMenu email={user.email ?? ''} orgSlug={orgSlug} role={role} />
+          </div>
+        </nav>
+
+        <main className="max-w-screen-2xl mx-auto px-4 py-8">
+          {children}
+        </main>
+      </div>
+    </PriorityModalProvider>
+  );
+}

@@ -55,7 +55,18 @@ export async function getOrgMembers(orgId: string) {
     .from('org_members')
     .select('*')
     .eq('org_id', orgId);
-  return data ?? [];
+  const members = data ?? [];
+
+  // Fetch emails via admin client (auth.users not accessible via RLS)
+  const { createAdminClient } = await import('@/lib/supabase/admin');
+  const admin = createAdminClient();
+  const enriched = await Promise.all(
+    members.map(async (m) => {
+      const { data: userData } = await admin.auth.admin.getUserById(m.user_id);
+      return { ...m, email: userData?.user?.email ?? 'unknown' };
+    })
+  );
+  return enriched;
 }
 
 // ---------- Invite Helpers ----------
@@ -112,14 +123,18 @@ export async function getTeamMembers(departmentId: string) {
   return data ?? [];
 }
 
-export async function getPriorities(departmentId: string): Promise<DbPriority[]> {
+export async function getPriorities(departmentId: string): Promise<(DbPriority & { milestone_stage: number })[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('priorities')
-    .select('*')
+    .select('*, milestone:milestones(*)')
     .eq('department_id', departmentId)
     .order('rank');
-  return data ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((p: any) => {
+    const m = Array.isArray(p.milestone) ? p.milestone[0] : p.milestone;
+    return { ...p, milestone_stage: m?.stage ?? 0 };
+  });
 }
 
 export async function getAllPrioritiesForOrg(orgId: string) {
@@ -174,35 +189,52 @@ export async function getNinetyDayTargets(departmentId: string) {
 
 // ---------- Time Savings Parser ----------
 
+const HOURS_PER_WEEK_PATTERN =
+  /(\d+(?:\.\d+)?)\s*(?:[–\-]\s*(\d+(?:\.\d+)?))?\s*(?:hours?|hrs?|h)\s*(?:\/|\s*per\s*)\s*(?:week|wk)\b/i;
+
+const NON_STANDARD_UNIT_PATTERNS = [
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:minutes?|mins?)\s*(?:\/|\s*per\s*)\s*(?:week|wk|day|merchant|partner|request)/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:hours?|hrs?|h)\s*(?:\/|\s*per\s*)\s*(?:month|day|merchant|partner|request)/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:days?)\b/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:hours?|hrs?)\s+(?:of\s+)?(?:\w+\s+)?daily/i,
+  /\d+(?:\.\d+)?\s*(?:[–\-]\s*\d+(?:\.\d+)?)?\s*(?:minutes?|mins?)\s*(?:\/|\s*per\s*)\s*(?:day)/i,
+];
+
+const NOT_QUANTIFIED_PATTERNS = [/not quantified/i, /to be quantified/i];
+
 export function parseTimeSavings(raw: string): ParsedTimeSavings {
-  if (!raw || raw.trim() === '') {
-    return { valid: false, rawText: raw ?? '', issue: 'not quantified' };
+  const trimmed = (raw ?? '').trim();
+
+  if (!trimmed) {
+    return { valid: false, rawText: raw ?? '', issue: 'no numeric value found' };
   }
 
-  const hoursMatch = raw.match(/([\d.]+)\s*[-–to]+\s*([\d.]+)\s*hours?\s*\/?\s*w/i)
-    || raw.match(/([\d.]+)\s*hours?\s*\/?\s*w/i);
+  for (const pattern of NOT_QUANTIFIED_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return { valid: false, rawText: raw, issue: 'not quantified' };
+    }
+  }
 
+  const hoursMatch = trimmed.match(HOURS_PER_WEEK_PATTERN);
   if (hoursMatch) {
     const min = parseFloat(hoursMatch[1]);
     const max = hoursMatch[2] ? parseFloat(hoursMatch[2]) : min;
-    return {
-      valid: true,
-      min,
-      max,
-      midpoint: (min + max) / 2,
-      display: min === max ? `${min} hrs/wk` : `${min}–${max} hrs/wk`,
-    };
+    const midpoint = (min + max) / 2;
+    const display = min === max ? `${min} hrs/wk` : `${min}\u2013${max} hrs/wk`;
+    return { valid: true, min, max, midpoint, display };
   }
 
-  if (/\d/.test(raw) && !/hour|hr|week|wk/i.test(raw)) {
+  for (const pattern of NON_STANDARD_UNIT_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return { valid: false, rawText: raw, issue: 'non-standard unit' };
+    }
+  }
+
+  if (/\d/.test(trimmed)) {
     return { valid: false, rawText: raw, issue: 'non-standard unit' };
   }
 
-  if (!/\d/.test(raw)) {
-    return { valid: false, rawText: raw, issue: 'no numeric value found' };
-  }
-
-  return { valid: false, rawText: raw, issue: 'non-standard unit' };
+  return { valid: false, rawText: raw, issue: 'no numeric value found' };
 }
 
 // ---------- Aggregation Functions ----------
@@ -281,9 +313,12 @@ export async function getCompanyOverview(orgId: string): Promise<CompanyOverview
     };
   });
 
+  const totalCompleted = all.filter((o) => o.milestoneStage === 3).length;
+
   return {
     totalOpportunities: all.length,
     byMilestoneStage,
+    totalCompleted,
     departments: deptSummaries,
     topWins: all.slice(0, 10),
   };
@@ -348,7 +383,7 @@ export async function getStaffingOverview(orgId: string): Promise<StaffingOvervi
   for (const dept of departments) {
     const team = await getTeamMembers(dept.id);
     const priorities = await getPriorities(dept.id);
-    staffing.push({ slug: dept.slug, name: dept.name, teamSize: team.length, priorityCount: priorities.length, ratio: team.length > 0 ? priorities.length / team.length : 0 });
+    staffing.push({ slug: dept.slug, name: dept.name, teamSize: team.length, priorityCount: priorities.length, prioritiesPerPerson: team.length > 0 ? priorities.length / team.length : 0 });
   }
   return staffing;
 }

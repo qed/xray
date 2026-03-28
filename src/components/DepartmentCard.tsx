@@ -3,14 +3,16 @@ import type { DepartmentSummary } from '@/lib/types';
 
 interface DepartmentCardProps {
   department: DepartmentSummary;
+  orgSlug?: string;
 }
 
-export default function DepartmentCard({ department }: DepartmentCardProps) {
+export default function DepartmentCard({ department, orgSlug }: DepartmentCardProps) {
   const { slug, name, totalPriorities, completed, inProgress, notStarted, progressPercent } = department;
+  const prefix = orgSlug ? `/org/${orgSlug}` : '';
 
   return (
     <Link
-      href={`/department/${slug}`}
+      href={`${prefix}/department/${slug}`}
       className="block bg-slate-50 border border-slate-200 rounded-xl p-6 hover:border-emerald-300 hover:bg-slate-100 transition-all group"
     >
       <h3 className="text-lg font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors mb-4">

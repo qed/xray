@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { RankedOpportunity } from '@/lib/types';
 import { usePriorityModal } from './PriorityModalContext';
@@ -55,6 +56,9 @@ Only output the corrected line at the end, so I can update the markdown file.`;
 }
 
 function InstructionPanel({ opp }: { opp: RankedOpportunity }) {
+  const params = useParams();
+  const orgSlug = params?.orgSlug as string | undefined;
+  const prefix = orgSlug ? `/org/${orgSlug}` : '';
   const [copied, setCopied] = useState(false);
   const [guideOpen, setGuideOpen] = useState(true);
   const prompt = buildPrompt(opp);
@@ -102,7 +106,7 @@ function InstructionPanel({ opp }: { opp: RankedOpportunity }) {
 
       {/* Upload Fix button */}
       <Link
-        href={`/upload?type=priorities&dept=${opp.departmentSlug}`}
+        href={`${prefix}/upload?type=priorities&dept=${opp.departmentSlug}`}
         className="inline-block px-4 py-2 text-sm font-medium rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
       >
         Upload Fix

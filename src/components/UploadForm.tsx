@@ -10,9 +10,11 @@ interface Department {
 
 interface UploadFormProps {
   departments: Department[];
+  orgId?: string;
+  orgSlug?: string;
 }
 
-export default function UploadForm({ departments }: UploadFormProps) {
+export default function UploadForm({ departments, orgId, orgSlug }: UploadFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,6 +100,9 @@ export default function UploadForm({ departments }: UploadFormProps) {
     if (department === '__new__') {
       formData.append('newDepartmentName', newDeptName);
     }
+    if (orgId) {
+      formData.append('orgId', orgId);
+    }
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
@@ -109,7 +114,7 @@ export default function UploadForm({ departments }: UploadFormProps) {
         return;
       }
 
-      router.push(`/department/${data.slug}`);
+      router.push(orgSlug ? `/org/${orgSlug}/department/${data.slug}` : `/department/${data.slug}`);
     } catch {
       setError('Upload failed. Please try again.');
       setSubmitting(false);

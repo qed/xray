@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseTimeSavings } from '../parser';
+import { parseTimeSavings } from '../db';
 
 describe('parseTimeSavings', () => {
   describe('valid hours/week patterns', () => {

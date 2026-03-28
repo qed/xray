@@ -36,13 +36,13 @@ export interface AutomationPriority {
 export interface MilestoneConfig {
   id: number;
   name: string;
-  definition: string;
+  definition?: string;
 }
 
 export interface MilestoneStatus {
   milestone: number;
-  updated: string;
-  notes: string;
+  updated?: string;
+  notes?: string;
 }
 
 export interface Department {
