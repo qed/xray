@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 interface AuthFormProps {
@@ -10,7 +9,6 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +30,7 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
     }
 
     if (inviteCode) {
-      router.push(`/invite/${inviteCode}`);
-      router.refresh();
+      window.location.href = `/invite/${inviteCode}`;
       return;
     }
 
@@ -47,14 +44,12 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const slug = (memberships[0] as any).organization?.slug;
       if (slug) {
-        router.push(`/org/${slug}/priorities`);
-        router.refresh();
+        window.location.href = `/org/${slug}/priorities`;
         return;
       }
     }
 
-    router.push('/join');
-    router.refresh();
+    window.location.href = '/join';
   }
 
   return (
