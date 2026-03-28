@@ -13,43 +13,59 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
+    try {
+      setStatus('Authenticating...');
+      const supabase = createClient();
 
-    if (mode === 'signup') {
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) { setError(signUpError.message); setLoading(false); return; }
-    } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) { setError(signInError.message); setLoading(false); return; }
-    }
+      if (mode === 'signup') {
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) { setError(signInError.message); setLoading(false); return; }
+      }
 
-    if (inviteCode) {
-      window.location.href = `/invite/${inviteCode}`;
-      return;
-    }
+      setStatus('Auth OK, finding your org...');
 
-    // Check if user already has orgs — go to first one
-    const { data: memberships } = await supabase
-      .from('org_members')
-      .select('org_id, organization:organizations(slug)')
-      .limit(1);
-
-    if (memberships && memberships.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const slug = (memberships[0] as any).organization?.slug;
-      if (slug) {
-        window.location.href = `/org/${slug}/priorities`;
+      if (inviteCode) {
+        window.location.href = `/invite/${inviteCode}`;
         return;
       }
-    }
 
-    window.location.href = '/join';
+      const { data: memberships, error: memErr } = await supabase
+        .from('org_members')
+        .select('org_id, organization:organizations(slug)')
+        .limit(1);
+
+      if (memErr) {
+        setStatus(`Query error: ${memErr.message}`);
+        setLoading(false);
+        return;
+      }
+
+      if (memberships && memberships.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const slug = (memberships[0] as any).organization?.slug;
+        if (slug) {
+          setStatus(`Redirecting to ${slug}...`);
+          window.location.href = `/org/${slug}/priorities`;
+          return;
+        }
+      }
+
+      setStatus('Redirecting to join...');
+      window.location.href = '/join';
+    } catch (err) {
+      setError(`Unexpected error: ${err}`);
+      setLoading(false);
+    }
   }
 
   return (
@@ -65,6 +81,7 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
           className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="At least 6 characters" />
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {status && <p className="text-sm text-blue-600">{status}</p>}
       <button type="submit" disabled={loading}
         className="w-full py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-40">
         {loading ? 'Loading...' : mode === 'signup' ? 'Sign Up' : 'Log In'}
