@@ -10,7 +10,7 @@ export default async function PrioritiesPage({ params }: { params: Promise<{ org
 
   const allOpportunities = await getTopWins(org.id, 100);
   const valid = allOpportunities.filter((o) => o.parsedTimeSavings.valid);
-  const unfiledCount = allOpportunities.length - valid.length;
+  const incompleteCount = allOpportunities.filter((o) => o.completeness.score < 10).length;
 
   return (
     <div className="space-y-10">
@@ -19,14 +19,14 @@ export default async function PrioritiesPage({ params }: { params: Promise<{ org
         <p className="text-slate-500 mt-1">Automation opportunities ranked by impact</p>
       </div>
 
-      {unfiledCount > 0 && (
+      {incompleteCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
           <p className="text-amber-800 text-sm">
-            {unfiledCount} {unfiledCount === 1 ? 'priority is' : 'priorities are'} missing hours/week estimates.{' '}
+            {incompleteCount} {incompleteCount === 1 ? 'priority has' : 'priorities have'} incomplete data.{' '}
             <Link href={`/org/${orgSlug}/unfiled`} className="font-medium underline hover:text-amber-900">
-              View Missing Gaps
+              Fill Missing Gaps
             </Link>{' '}
-            to resolve them.
+            to improve your analysis.
           </p>
         </div>
       )}
