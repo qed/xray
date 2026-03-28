@@ -79,6 +79,7 @@ export interface DepartmentSummary {
 }
 
 export interface RankedOpportunity {
+  id: string;
   departmentSlug: string;
   departmentName: string;
   rank: number;
@@ -97,11 +98,18 @@ export interface RankedOpportunity {
   dependencies: string[];
   suggestedApproach: string;
   successCriteria: string;
+  completeness: Completeness;
 }
 
 export type ParsedTimeSavings =
   | { valid: true; min: number; max: number; midpoint: number; display: string }
   | { valid: false; rawText: string; issue: string };
+
+export interface Completeness {
+  score: number;   // 0-10
+  total: number;   // always 10
+  missing: string[]; // DB column names that are empty
+}
 
 export interface UnfiledPriority {
   departmentSlug: string;

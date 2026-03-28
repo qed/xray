@@ -3,7 +3,7 @@ import { computeScore, MILESTONE_STAGES } from '@/lib/constants';
 import type {
   DbDepartment, DbPriority, DbMilestone,
   Organization, OrgMember, Invite,
-  RankedOpportunity, ParsedTimeSavings, CompanyOverview,
+  RankedOpportunity, ParsedTimeSavings, Completeness, CompanyOverview,
   DepartmentSummary, TimeSavingsRollup, ConsolidatedRisk,
   StaffingOverview, DepartmentDependency, StrategicBlocker,
   ToolOverlap,
@@ -237,6 +237,24 @@ export function parseTimeSavings(raw: string): ParsedTimeSavings {
   return { valid: false, rawText: raw, issue: 'no numeric value found' };
 }
 
+const REQUIRED_PRIORITY_FIELDS = [
+  'name', 'what_to_automate', 'current_state', 'why_it_matters',
+  'estimated_time_savings', 'complexity', 'impact',
+  'suggested_approach', 'success_criteria', 'dependencies',
+] as const;
+
+export function getCompletenessScore(p: Record<string, unknown> | DbPriority): Completeness {
+  const record = p as Record<string, unknown>;
+  const missing: string[] = [];
+  for (const field of REQUIRED_PRIORITY_FIELDS) {
+    const value = record[field];
+    if (Array.isArray(value) ? value.length === 0 : !value) {
+      missing.push(field);
+    }
+  }
+  return { score: 10 - missing.length, total: 10, missing };
+}
+
 // ---------- Aggregation Functions ----------
 
 export async function getTopWins(orgId: string, n: number): Promise<RankedOpportunity[]> {
@@ -248,6 +266,7 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
     const parsedTimeSavings = parseTimeSavings(p.estimated_time_savings);
 
     return {
+      id: p.id,
       departmentSlug: p.department.slug,
       departmentName: p.department.name,
       rank: p.rank,
@@ -266,6 +285,7 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
       dependencies: p.dependencies,
       suggestedApproach: p.suggested_approach,
       successCriteria: p.success_criteria,
+      completeness: getCompletenessScore(p),
     };
   });
 
@@ -275,7 +295,9 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
 
 export async function getUnfiledRankedOpportunities(orgId: string): Promise<RankedOpportunity[]> {
   const all = await getTopWins(orgId, 1000);
-  return all.filter((opp) => !opp.parsedTimeSavings.valid);
+  return all
+    .filter((opp) => opp.completeness.score < 10)
+    .sort((a, b) => a.completeness.score - b.completeness.score);
 }
 
 export async function getOpportunitiesByMilestone(orgId: string): Promise<Record<number, RankedOpportunity[]>> {

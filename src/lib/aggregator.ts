@@ -45,7 +45,29 @@ function buildRankedOpportunity(
   milestoneStage: number,
   milestoneName: string
 ): RankedOpportunity {
+  // Map camelCase priority to snake_case record for completeness scoring
+  const asRecord: Record<string, unknown> = {
+    name: priority.name,
+    what_to_automate: priority.whatToAutomate,
+    current_state: priority.currentState,
+    why_it_matters: priority.whyItMatters,
+    estimated_time_savings: priority.estimatedTimeSavings,
+    complexity: priority.complexity,
+    impact: priority.impact,
+    suggested_approach: priority.suggestedApproach,
+    success_criteria: priority.successCriteria,
+    dependencies: priority.dependencies,
+  };
+
+  const missing: string[] = [];
+  for (const [field, value] of Object.entries(asRecord)) {
+    if (Array.isArray(value) ? value.length === 0 : !value) {
+      missing.push(field);
+    }
+  }
+
   return {
+    id: `${priority.departmentSlug}-${priority.rank}`,
     departmentSlug: priority.departmentSlug,
     departmentName,
     rank: priority.rank,
@@ -64,6 +86,7 @@ function buildRankedOpportunity(
     dependencies: priority.dependencies,
     suggestedApproach: priority.suggestedApproach,
     successCriteria: priority.successCriteria,
+    completeness: { score: 10 - missing.length, total: 10, missing },
   };
 }
 
