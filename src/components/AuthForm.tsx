@@ -33,9 +33,27 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
 
     if (inviteCode) {
       router.push(`/invite/${inviteCode}`);
-    } else {
-      router.push('/join');
+      router.refresh();
+      return;
     }
+
+    // Check if user already has orgs — go to first one
+    const { data: memberships } = await supabase
+      .from('org_members')
+      .select('org_id, organization:organizations(slug)')
+      .limit(1);
+
+    if (memberships && memberships.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const slug = (memberships[0] as any).organization?.slug;
+      if (slug) {
+        router.push(`/org/${slug}/priorities`);
+        router.refresh();
+        return;
+      }
+    }
+
+    router.push('/join');
     router.refresh();
   }
 
