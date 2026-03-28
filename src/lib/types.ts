@@ -168,3 +168,79 @@ export interface ToolOverlap {
   departmentSlugs: string[];
   relatedPriorities: { departmentName: string; priorityName: string }[];
 }
+
+// --- Multi-tenant types ---
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+export interface OrgMember {
+  id: string;
+  org_id: string;
+  user_id: string;
+  role: 'owner' | 'admin' | 'member';
+  joined_at: string;
+}
+
+export interface Invite {
+  id: string;
+  org_id: string;
+  code: string;
+  email: string | null;
+  max_uses: number | null;
+  use_count: number;
+  expires_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface DbDepartment {
+  id: string;
+  org_id: string;
+  slug: string;
+  name: string;
+  mission: string;
+  scope: string;
+  tools: string[];
+  single_points_of_failure: string[];
+  pain_points: string[];
+  tribal_knowledge_risks: string[];
+}
+
+export interface DbTeamMember {
+  id: string;
+  department_id: string;
+  name: string;
+  title: string;
+  responsibilities: string;
+}
+
+export interface DbPriority {
+  id: string;
+  department_id: string;
+  rank: number;
+  name: string;
+  effort: string;
+  complexity: string;
+  impact: string;
+  what_to_automate: string;
+  current_state: string;
+  why_it_matters: string;
+  estimated_time_savings: string;
+  suggested_approach: string;
+  success_criteria: string;
+  dependencies: string[];
+  status: string;
+}
+
+export interface DbMilestone {
+  id: string;
+  priority_id: string;
+  stage: number;
+  updated_at: string;
+  notes: string;
+}
