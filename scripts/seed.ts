@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { config } from 'dotenv';
+import { parseProfile, parsePriorities, type ParsedProfile } from '../src/lib/parse-markdown';
 
 config({ path: '.env.local' });
 
@@ -25,60 +26,6 @@ const ARTIFACTS_DIR = path.join(process.cwd(), 'artifacts', 'WeVend X-Ray');
 
 function readFile(filePath: string): string {
   return fs.readFileSync(filePath, 'utf-8');
-}
-
-function parseDepartmentProfile(text: string) {
-  const lines = text.split('\n');
-
-  function extractSection(heading: string): string[] {
-    const items: string[] = [];
-    let inSection = false;
-    for (const line of lines) {
-      if (line.match(new RegExp(`^#{1,3}\\s.*${heading}`, 'i'))) { inSection = true; continue; }
-      if (inSection && /^#{1,3}\s/.test(line)) break;
-      if (inSection && line.startsWith('- ')) items.push(line.replace(/^-\s*/, '').trim());
-    }
-    return items;
-  }
-
-  function extractText(heading: string): string {
-    let inSection = false;
-    const parts: string[] = [];
-    for (const line of lines) {
-      if (line.match(new RegExp(`^#{1,3}\\s.*${heading}`, 'i'))) { inSection = true; continue; }
-      if (inSection && /^#{1,3}\s/.test(line)) break;
-      if (inSection && line.trim()) parts.push(line.trim());
-    }
-    return parts.join(' ');
-  }
-
-  const teamMembers: { name: string; title: string; responsibilities: string }[] = [];
-  let inTeam = false;
-  let pastHeader = false;
-  for (const line of lines) {
-    if (line.match(/^#{1,3}\s.*team/i)) { inTeam = true; continue; }
-    if (inTeam && /^#{1,3}\s/.test(line) && !line.match(/team/i)) break;
-    if (inTeam && line.includes('---')) { pastHeader = true; continue; }
-    if (inTeam && pastHeader && line.includes('|')) {
-      const cols = line.split('|').map((c) => c.trim()).filter(Boolean);
-      if (cols.length >= 2) {
-        teamMembers.push({ name: cols[0], title: cols[1] ?? '', responsibilities: cols[2] ?? '' });
-      }
-    }
-  }
-
-  const name = (lines.find((l) => /^#\s/.test(l)) ?? '').replace(/^#\s*/, '').replace(/department\s*profile/i, '').trim();
-
-  return {
-    name,
-    mission: extractText('mission') || extractText('purpose'),
-    scope: extractText('scope'),
-    teamMembers,
-    tools: extractSection('tools') || extractSection('software'),
-    singlePointsOfFailure: extractSection('single point'),
-    painPoints: extractSection('pain point'),
-    tribalKnowledgeRisks: extractSection('tribal knowledge'),
-  };
 }
 
 async function seed() {
@@ -121,11 +68,12 @@ async function seed() {
         const prioritiesPath = path.join(deptPath, 'automation_priorities.md');
 
         let deptName = dir.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-        let profile: ReturnType<typeof parseDepartmentProfile> | null = null;
+        let profile: ParsedProfile | null = null;
 
         if (fs.existsSync(profilePath)) {
-          profile = parseDepartmentProfile(readFile(profilePath));
-          deptName = profile.name || deptName;
+          const parsed = parseProfile(readFile(profilePath));
+          deptName = parsed.name || deptName;
+          profile = parsed;
         }
 
         // Upsert department
@@ -165,71 +113,29 @@ async function seed() {
         // Import priorities
         if (fs.existsSync(prioritiesPath)) {
           const priorityText = readFile(prioritiesPath);
-          const sections = priorityText.split(/^##\s+(?:Priority\s+)?(\d+)/mi);
+          const priorities = parsePriorities(priorityText);
 
-          const priorities: { rank: number; name: string; [key: string]: unknown }[] = [];
-          for (let i = 1; i < sections.length; i += 2) {
-            const rank = parseInt(sections[i], 10);
-            const content = sections[i + 1] ?? '';
-            const contentLines = content.split('\n');
-
-            function findField(pattern: RegExp): string {
-              for (const line of contentLines) {
-                const match = line.match(pattern);
-                if (match) return match[1]?.trim() ?? '';
-              }
-              return '';
-            }
-
-            function findSection(heading: string): string {
-              let inSection = false;
-              const parts: string[] = [];
-              for (const line of contentLines) {
-                if (line.match(new RegExp(`^###?\\s.*${heading}`, 'i'))) { inSection = true; continue; }
-                if (inSection && /^###?\s/.test(line)) break;
-                if (inSection && line.trim()) parts.push(line.trim());
-              }
-              return parts.join('\n');
-            }
-
-            function findList(heading: string): string[] {
-              let inSection = false;
-              const items: string[] = [];
-              for (const line of contentLines) {
-                if (line.match(new RegExp(`^###?\\s.*${heading}`, 'i'))) { inSection = true; continue; }
-                if (inSection && /^###?\s/.test(line)) break;
-                if (inSection && /^[-*]\s/.test(line.trim())) items.push(line.trim().replace(/^[-*]\s*/, ''));
-              }
-              return items;
-            }
-
-            const nameMatch = contentLines[0]?.match(/^[:\s\u2014\u2013-]*(.+)/);
-            const name = nameMatch?.[1]?.trim() ?? `Priority ${rank}`;
-
-            priorities.push({
-              rank,
-              name,
-              effort: findField(/\*?\*?effort\*?\*?[:\s]+(.+)/i),
-              complexity: findField(/\*?\*?complexity\*?\*?[:\s]+(.+)/i),
-              impact: findField(/\*?\*?impact\*?\*?[:\s]+(.+)/i),
-              what_to_automate: findSection('what to automate') || findSection('automate'),
-              current_state: findSection('current state') || findSection('current process'),
-              why_it_matters: findSection('why it matters') || findSection('why'),
-              estimated_time_savings: findField(/\*?\*?estimated time saving\*?\*?s?[:\s]+(.+)/i),
-              suggested_approach: findSection('suggested approach') || findSection('approach'),
-              success_criteria: findSection('success criteria') || findSection('success'),
-              dependencies: findList('dependencies') || findList('depends on'),
-              status: findField(/\*?\*?status\*?\*?[:\s]+(.+)/i),
-            });
-          }
-
-          // Delete existing, insert new
           await supabase.from('priorities').delete().eq('department_id', dept.id);
 
           if (priorities.length > 0) {
             const { data: inserted } = await supabase
               .from('priorities')
-              .insert(priorities.map((p) => ({ department_id: dept.id, ...p })))
+              .insert(priorities.map((p) => ({
+                department_id: dept.id,
+                rank: p.rank,
+                name: p.name,
+                effort: p.effort,
+                complexity: p.complexity,
+                impact: p.impact,
+                what_to_automate: p.whatToAutomate,
+                current_state: p.currentState,
+                why_it_matters: p.whyItMatters,
+                estimated_time_savings: p.estimatedTimeSavings,
+                suggested_approach: p.suggestedApproach,
+                success_criteria: p.successCriteria,
+                dependencies: p.dependencies,
+                status: p.status,
+              })))
               .select();
 
             if (inserted) {

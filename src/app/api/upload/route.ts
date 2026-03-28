@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { parsePrioritiesFromText, parseProfileFromText } from '@/lib/parse-upload';
+import { parsePriorities, parseProfile } from '@/lib/parse-markdown';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   try {
     if (fileType === 'profile') {
-      const profile = parseProfileFromText(text);
+      const profile = parseProfile(text);
       await supabase
         .from('departments')
         .update({
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      const priorities = parsePrioritiesFromText(text);
+      const priorities = parsePriorities(text);
 
       // Delete existing priorities for this department
       await supabase.from('priorities').delete().eq('department_id', dept.id);
@@ -95,9 +95,9 @@ export async function POST(request: NextRequest) {
         const { data: insertedPriorities } = await supabase
           .from('priorities')
           .insert(
-            priorities.map((p, i) => ({
+            priorities.map((p) => ({
               department_id: dept!.id,
-              rank: i + 1,
+              rank: p.rank,
               name: p.name,
               effort: p.effort,
               complexity: p.complexity,
