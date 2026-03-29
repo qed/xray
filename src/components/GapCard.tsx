@@ -229,7 +229,6 @@ export default function GapCard({
   const [rangeMode, setRangeMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showFilled, setShowFilled] = useState(false);
 
   function setField(key: string, value: string | string[]) {
     setFormValues((prev) => ({ ...prev, [key]: value }));
@@ -309,16 +308,15 @@ export default function GapCard({
   /*  Render helpers                                                   */
   /* ---------------------------------------------------------------- */
 
-  function renderField(field: string) {
+  /** Render just the input control for a field (no wrapper/label). */
+  function renderFieldInput(field: string) {
     const config = FIELD_CONFIG[field];
     if (!config) return null;
 
     const { label, type, options } = config;
 
     return (
-      <div key={field} className="space-y-1.5">
-        <label className="block text-sm font-medium text-slate-700">{label}</label>
-
+      <>
         {type === 'text' && (
           <input
             type="text"
@@ -369,9 +367,68 @@ export default function GapCard({
             onChange={(tags) => setField(field, tags)}
           />
         )}
+      </>
+    );
+  }
+
+  /** Render a filled field as a read-only section matching PriorityModal style. */
+  function renderFilledSection(field: string) {
+    const config = FIELD_CONFIG[field];
+    if (!config) return null;
+    const value = readFilledValue(field);
+    if (!value) return null;
+
+    if (field === 'dependencies') {
+      const deps = Array.isArray(priority.dependencies) ? priority.dependencies : [];
+      if (deps.length === 0) return null;
+      return (
+        <div key={field}>
+          <h4 className="text-emerald-600 font-medium text-sm mb-1">{config.label}</h4>
+          <ul className="list-disc list-inside space-y-1 text-slate-600 text-sm">
+            {deps.map((dep, idx) => (
+              <li key={idx}>{dep}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    return (
+      <div key={field}>
+        <h4 className="text-emerald-600 font-medium text-sm mb-1">{config.label}</h4>
+        <p className="text-slate-600 text-sm whitespace-pre-line">{value}</p>
       </div>
     );
   }
+
+  /** Render a missing field as an editable input with a highlight border. */
+  function renderMissingField(field: string) {
+    const config = FIELD_CONFIG[field];
+    if (!config) return null;
+    return (
+      <div key={field} className="bg-amber-50/50 border border-amber-200 rounded-lg p-4 space-y-1.5">
+        <label className="block text-sm font-medium text-amber-700">{config.label} <span className="text-amber-400 text-xs">(missing)</span></label>
+        {renderFieldInput(field)}
+      </div>
+    );
+  }
+
+  /* ---------------------------------------------------------------- */
+  /*  Field display order — show all fields in consistent order        */
+  /* ---------------------------------------------------------------- */
+
+  /** Ordered list of all fields to display, matching PriorityModal section order. */
+  const DISPLAY_ORDER = [
+    'what_to_automate',
+    'current_state',
+    'why_it_matters',
+    'estimated_time_savings',
+    'complexity',
+    'impact',
+    'dependencies',
+    'suggested_approach',
+    'success_criteria',
+  ];
 
   /* ---------------------------------------------------------------- */
   /*  Main render                                                      */
@@ -382,8 +439,15 @@ export default function GapCard({
       {/* Header */}
       <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="text-lg font-semibold text-slate-900 truncate">{priority.name}</h3>
-          <p className="text-sm text-slate-500">{priority.departmentName}</p>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 text-lg font-bold shrink-0">
+              {priority.rank}
+            </span>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 truncate">{priority.name}</h3>
+              <p className="text-sm text-slate-500">{priority.departmentName}</p>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <span className="text-xs text-slate-500">
@@ -393,55 +457,18 @@ export default function GapCard({
         </div>
       </div>
 
-      {/* Body */}
+      {/* Body — all fields in consistent order, filled = read-only, missing = editable */}
       <div className="px-6 py-5 space-y-5">
-        {/* Missing fields — editable inputs */}
-        {missingFields.length > 0 ? (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-500">
-              Fill in the missing fields below ({missingFields.length} remaining):
-            </p>
-            {missingFields.map((field) => renderField(field))}
-          </div>
-        ) : (
-          <p className="text-sm text-emerald-600 font-medium">
-            All fields are complete for this priority.
+        {missingFields.length > 0 && (
+          <p className="text-sm text-amber-600">
+            {missingFields.length} field{missingFields.length === 1 ? '' : 's'} still needed — fill in the highlighted sections below.
           </p>
         )}
 
-        {/* Already-filled fields — collapsible read-only */}
-        {filledFields.length > 0 && (
-          <div className="border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowFilled((v) => !v)}
-              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700"
-            >
-              <svg
-                className={`w-4 h-4 transition-transform ${showFilled ? 'rotate-90' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              {filledFields.length} completed field{filledFields.length === 1 ? '' : 's'}
-            </button>
-            {showFilled && (
-              <div className="mt-3 space-y-3">
-                {filledFields.map((field) => {
-                  const config = FIELD_CONFIG[field];
-                  if (!config) return null;
-                  return (
-                    <div key={field} className="text-sm">
-                      <span className="font-medium text-slate-600">{config.label}:</span>{' '}
-                      <span className="text-slate-500">{readFilledValue(field)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+        {DISPLAY_ORDER.map((field) =>
+          missingFields.includes(field)
+            ? renderMissingField(field)
+            : renderFilledSection(field)
         )}
 
         {/* Error */}
