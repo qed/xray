@@ -55,42 +55,72 @@ export default function ImplementationPlan({
 }: ImplementationPlanProps) {
   const capabilities = detectCapabilities(priority.suggestedApproach);
 
+  const missingStyle = 'bg-amber-50 border-amber-200';
+  const filledStyle = 'bg-slate-50 border-slate-200';
+  const missingNote = (
+    <p className="text-amber-500 text-sm italic">Not yet provided — fill in via Missing Gaps.</p>
+  );
+
   return (
     <div className="space-y-6">
-      {/* Objective */}
-      <section className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Objective</h2>
-        {priority.whatToAutomate && (
-          <p className="text-slate-700 mb-2">{priority.whatToAutomate}</p>
-        )}
-        {priority.whyItMatters && (
-          <p className="text-slate-500 text-sm">{priority.whyItMatters}</p>
-        )}
+      {/* What to Automate */}
+      <section className={`border rounded-xl p-6 ${priority.whatToAutomate ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">What to Automate</h2>
+        {priority.whatToAutomate ? (
+          <p className="text-slate-700">{priority.whatToAutomate}</p>
+        ) : missingNote}
       </section>
 
       {/* Current State */}
-      {priority.currentState && (
-        <section className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-emerald-600 mb-3">Current State</h2>
+      <section className={`border rounded-xl p-6 ${priority.currentState ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Current State</h2>
+        {priority.currentState ? (
           <p className="text-slate-600">{priority.currentState}</p>
-        </section>
-      )}
+        ) : missingNote}
+      </section>
 
-      {/* Target State */}
-      {priority.successCriteria && (
-        <section className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-emerald-600 mb-3">Target State</h2>
-          <p className="text-slate-600">{priority.successCriteria}</p>
-        </section>
-      )}
+      {/* Why It Matters */}
+      <section className={`border rounded-xl p-6 ${priority.whyItMatters ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Why It Matters</h2>
+        {priority.whyItMatters ? (
+          <p className="text-slate-600">{priority.whyItMatters}</p>
+        ) : missingNote}
+      </section>
 
-      {/* Execution Approach */}
-      {priority.suggestedApproach && (
-        <section className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-emerald-600 mb-3">Execution Approach</h2>
+      {/* Estimated Time Savings */}
+      <section className={`border rounded-xl p-6 ${priority.estimatedTimeSavings ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Estimated Time Savings</h2>
+        {priority.estimatedTimeSavings ? (
+          <div className="flex items-center gap-4">
+            <span className="text-2xl font-bold text-emerald-600">{priority.estimatedTimeSavings}</span>
+            {priority.effort && (
+              <span className={`text-sm ${effortColors[priority.effort] ?? 'text-slate-600'}`}>
+                Effort: {priority.effort}
+              </span>
+            )}
+          </div>
+        ) : missingNote}
+      </section>
+
+      {/* Dependencies & Blockers */}
+      <section className={`border rounded-xl p-6 ${priority.dependencies.length > 0 ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Dependencies &amp; Blockers</h2>
+        {priority.dependencies.length > 0 ? (
+          <ul className="list-disc list-inside text-slate-600 space-y-1">
+            {priority.dependencies.map((dep, idx) => (
+              <li key={idx}>{dep}</li>
+            ))}
+          </ul>
+        ) : missingNote}
+      </section>
+
+      {/* Suggested Approach */}
+      <section className={`border rounded-xl p-6 ${priority.suggestedApproach ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Suggested Approach</h2>
+        {priority.suggestedApproach ? (
           <p className="text-slate-600 whitespace-pre-line">{priority.suggestedApproach}</p>
-        </section>
-      )}
+        ) : missingNote}
+      </section>
 
       {/* Claude Cowork Capabilities */}
       {capabilities.length > 0 && (
@@ -109,31 +139,12 @@ export default function ImplementationPlan({
         </section>
       )}
 
-      {/* Dependencies & Blockers */}
-      {priority.dependencies.length > 0 && (
-        <section className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-emerald-600 mb-3">Dependencies &amp; Blockers</h2>
-          <ul className="list-disc list-inside text-slate-600 space-y-1">
-            {priority.dependencies.map((dep, idx) => (
-              <li key={idx}>{dep}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Estimated Effort */}
-      <section className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Estimated Effort</h2>
-        <div className="flex items-center gap-4">
-          <span className={`text-2xl font-bold ${effortColors[priority.effort] ?? 'text-slate-600'}`}>
-            {priority.effort}
-          </span>
-          {priority.estimatedTimeSavings && (
-            <span className="text-slate-500 text-sm">
-              Time savings: {priority.estimatedTimeSavings}
-            </span>
-          )}
-        </div>
+      {/* Success Criteria */}
+      <section className={`border rounded-xl p-6 ${priority.successCriteria ? filledStyle : missingStyle}`}>
+        <h2 className="text-lg font-semibold text-emerald-600 mb-3">Success Criteria</h2>
+        {priority.successCriteria ? (
+          <p className="text-slate-600">{priority.successCriteria}</p>
+        ) : missingNote}
       </section>
 
       {/* Milestone Pipeline */}
