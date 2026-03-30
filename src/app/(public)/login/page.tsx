@@ -1,7 +1,13 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 import AuthForm from '@/components/AuthForm';
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ redirect?: string; invite?: string }> }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) redirect('/orgs');
+
   const params = await searchParams;
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
