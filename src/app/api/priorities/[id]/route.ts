@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 const ALLOWED_FIELDS = new Set([
-  'name', 'effort', 'complexity', 'impact',
+  'name', 'effort', 'complexity',
   'what_to_automate', 'current_state', 'why_it_matters',
   'estimated_time_savings', 'suggested_approach', 'success_criteria',
   'dependencies', 'status',

@@ -36,7 +36,6 @@ export default async function PlanPage({ params }: { params: Promise<{ orgSlug: 
     name: dbPriority.name,
     effort: dbPriority.effort as AutomationPriority['effort'],
     complexity: dbPriority.complexity as AutomationPriority['complexity'],
-    impact: dbPriority.impact as AutomationPriority['impact'],
     whatToAutomate: dbPriority.what_to_automate,
     currentState: dbPriority.current_state,
     whyItMatters: dbPriority.why_it_matters,
@@ -69,7 +68,7 @@ export default async function PlanPage({ params }: { params: Promise<{ orgSlug: 
           <h1 className="text-3xl font-bold text-slate-900">{priority.name}</h1>
         </div>
         <p className="text-slate-500 text-sm ml-12">
-          {dept.name} &middot; Impact: {priority.impact} &middot; Complexity: {priority.complexity}
+          {dept.name} &middot; Complexity: {priority.complexity}
         </p>
       </section>
 

@@ -7,7 +7,6 @@ const FIELD_LABELS: Record<string, string> = {
   why_it_matters: 'Why It Matters',
   estimated_time_savings: 'Estimated Time Savings (in hrs/week format)',
   complexity: 'Complexity (Low, Low-Medium, Medium, Medium-High, or High)',
-  impact: 'Impact (Low, Medium, High, Very High, or Critical)',
   dependencies: 'Dependencies (as a bullet list)',
   suggested_approach: 'Suggested Approach',
   success_criteria: 'Success Criteria',
@@ -20,7 +19,6 @@ const DB_TO_PROP: Record<string, keyof RankedOpportunity> = {
   why_it_matters: 'whyItMatters',
   estimated_time_savings: 'estimatedTimeSavings',
   complexity: 'complexity',
-  impact: 'impact',
   dependencies: 'dependencies',
   suggested_approach: 'suggestedApproach',
   success_criteria: 'successCriteria',
@@ -162,8 +160,6 @@ export function generateDepartmentPrompt(
   lines.push('[X hrs/week]');
   lines.push('');
   lines.push('**Complexity:** [Low/Low-Medium/Medium/Medium-High/High]');
-  lines.push('');
-  lines.push('**Impact:** [Low/Medium/High/Very High/Critical]');
   lines.push('');
   lines.push('**Dependencies:**');
   lines.push('- [dependency 1]');

@@ -7,7 +7,6 @@ import KanbanColumn from './KanbanColumn';
 interface Filters {
   department: string;
   complexity: string;
-  impact: string;
 }
 
 interface KanbanBoardProps {
@@ -20,7 +19,6 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
   const [filters, setFilters] = useState<Filters>({
     department: ALL,
     complexity: ALL,
-    impact: ALL,
   });
 
   // Derive unique filter options from data
@@ -45,7 +43,6 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
   }, [columns]);
 
   const complexities = ['Low', 'Medium', 'Medium-High', 'High'];
-  const impacts = ['Low', 'Medium', 'High', 'Very High', 'Critical'];
 
   // Apply filters
   const filteredColumns = useMemo(() => {
@@ -54,7 +51,6 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
       opportunities: col.opportunities.filter((opp) => {
         if (filters.department !== ALL && opp.departmentSlug !== filters.department) return false;
         if (filters.complexity !== ALL && opp.complexity !== filters.complexity) return false;
-        if (filters.impact !== ALL && opp.impact !== filters.impact) return false;
         return true;
       }),
     }));
@@ -94,20 +90,9 @@ export default function KanbanBoard({ columns }: KanbanBoardProps) {
           ))}
         </select>
 
-        <select
-          value={filters.impact}
-          onChange={(e) => handleChange('impact', e.target.value)}
-          className="bg-white border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-        >
-          <option value={ALL}>All Impact</option>
-          {impacts.map((i) => (
-            <option key={i} value={i}>{i}</option>
-          ))}
-        </select>
-
-        {(filters.department !== ALL || filters.complexity !== ALL || filters.impact !== ALL) && (
+        {(filters.department !== ALL || filters.complexity !== ALL) && (
           <button
-            onClick={() => setFilters({ department: ALL, complexity: ALL, impact: ALL })}
+            onClick={() => setFilters({ department: ALL, complexity: ALL })}
             className="text-xs text-emerald-600 hover:text-emerald-700 transition-colors ml-1"
           >
             Clear filters

@@ -20,7 +20,6 @@ export interface ParsedPriority {
   name: string;
   effort: string;
   complexity: string;
-  impact: string;
   whatToAutomate: string;
   currentState: string;
   whyItMatters: string;
@@ -44,7 +43,6 @@ const REQUIRED_FIELDS = [
   'whyItMatters',
   'estimatedTimeSavings',
   'complexity',
-  'impact',
   'suggestedApproach',
   'successCriteria',
   'dependencies',
@@ -305,9 +303,6 @@ export function parsePriorities(text: string): ParsedPriority[] {
     const complexity =
       findField(/\*?\*?complexity\*?\*?[:\s]+(.+)/i);
 
-    const impact =
-      findField(/\*?\*?impact\*?\*?[:\s]+(.+)/i);
-
     const suggestedApproach =
       findSection('suggested approach') ||
       findSection('approach') ||
@@ -335,7 +330,6 @@ export function parsePriorities(text: string): ParsedPriority[] {
       whyItMatters,
       estimatedTimeSavings,
       complexity,
-      impact,
       suggestedApproach,
       successCriteria,
       dependencies,
@@ -354,7 +348,6 @@ export function parsePriorities(text: string): ParsedPriority[] {
       name,
       effort,
       complexity,
-      impact,
       whatToAutomate,
       currentState,
       whyItMatters,

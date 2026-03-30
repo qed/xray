@@ -26,13 +26,13 @@ const TOUR_STEPS: TourStep[] = [
   {
     title: 'AI Priorities',
     description:
-      'The full list of automation priorities across every department. Sort by impact, effort, or score. Filter by department. Click any row to see the full detail modal.',
+      'The full list of automation priorities across every department. Sort by hours saved or effort. Filter by department. Click any row to see the full detail modal.',
     route: '/',
     highlights: [
       'Sortable table with all priorities',
-      'Filter by department or impact level',
+      'Filter by department or complexity level',
       'Click any row for the detail modal',
-      'Score computed from impact and effort',
+      'Score computed from time savings and effort',
     ],
   },
   {
@@ -42,7 +42,7 @@ const TOUR_STEPS: TourStep[] = [
     route: '/tracker',
     highlights: [
       'Kanban board with 4 milestone columns',
-      'Cards show department, impact, and effort',
+      'Cards show department, complexity, and effort',
       'Visual progress across the entire pipeline',
       'Quick identification of bottlenecks',
     ],

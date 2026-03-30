@@ -126,7 +126,6 @@ async function seed() {
                 name: p.name,
                 effort: p.effort,
                 complexity: p.complexity,
-                impact: p.impact,
                 what_to_automate: p.whatToAutomate,
                 current_state: p.currentState,
                 why_it_matters: p.whyItMatters,

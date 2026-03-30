@@ -8,14 +8,6 @@ interface PrioritiesTableProps {
   opportunities: RankedOpportunity[];
 }
 
-const impactColors: Record<string, string> = {
-  Critical: 'bg-red-100 text-red-700 border-red-200',
-  'Very High': 'bg-orange-100 text-orange-700 border-orange-200',
-  High: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  Medium: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Low: 'bg-slate-100 text-slate-600 border-slate-200',
-};
-
 const EFFORT_SORT_VALUES: Record<string, number> = {
   Low: 1,
   Medium: 2,
@@ -92,7 +84,6 @@ export default function PrioritiesTable({
             <th className="px-4 py-3">Rank</th>
             <th className="px-4 py-3">Opportunity</th>
             <th className="px-4 py-3">Department</th>
-            <th className="px-4 py-3">Impact</th>
             <th
               className="px-4 py-3 cursor-pointer hover:text-emerald-600 transition-colors select-none"
               onClick={() => handleSort('effort')}
@@ -120,13 +111,6 @@ export default function PrioritiesTable({
               <td className="px-4 py-3 text-slate-900 font-medium">{opp.name}</td>
               <td className="px-4 py-3 text-slate-600">
                 {opp.departmentName}
-              </td>
-              <td className="px-4 py-3">
-                <span
-                  className={`inline-block px-2 py-0.5 rounded border text-xs font-medium ${impactColors[opp.impact] ?? impactColors.Low}`}
-                >
-                  {opp.impact}
-                </span>
               </td>
               <td className="px-4 py-3 text-slate-600">{opp.effort}</td>
               <td className="px-4 py-3 text-slate-600">

@@ -10,14 +10,6 @@ interface PriorityModalProps {
   onClose: () => void;
 }
 
-const impactColors: Record<string, string> = {
-  Critical: 'bg-red-100 text-red-700 border-red-200',
-  'Very High': 'bg-orange-100 text-orange-700 border-orange-200',
-  High: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  Medium: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Low: 'bg-slate-100 text-slate-600 border-slate-200',
-};
-
 const effortColors: Record<string, string> = {
   Low: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   Medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -104,7 +96,6 @@ export default function PriorityModal({ opportunity, onClose }: PriorityModalPro
         <div className="px-6 py-5 space-y-5">
           {/* Badges */}
           <div className="flex flex-wrap gap-2">
-            <Badge label="Impact" value={opp.impact} colorMap={impactColors} />
             <Badge label="Effort" value={opp.effort} colorMap={effortColors} />
             <Badge label="Complexity" value={opp.complexity} colorMap={complexityColors} />
             <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-md border bg-emerald-100 text-emerald-700 border-emerald-200">

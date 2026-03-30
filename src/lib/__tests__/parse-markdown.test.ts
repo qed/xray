@@ -425,7 +425,6 @@ describe('parsePriorities', () => {
       expect(p.whyItMatters).toContain('Even with the existing Excel PO template');
       expect(p.estimatedTimeSavings).toContain('Not quantified');
       expect(p.complexity).toBe('Low \u2014 primarily a process and template design fix.');
-      expect(p.impact).toBe('High');
       expect(p.suggestedApproach).toContain('standard Excel PO template');
       expect(p.successCriteria).toContain('No duplicate customer setups');
       expect(p.dependencies).toEqual([
@@ -511,7 +510,6 @@ Do the thing.
       expect(result[0].missingFields).toContain('currentState');
       expect(result[0].missingFields).toContain('whyItMatters');
       expect(result[0].missingFields).toContain('estimatedTimeSavings');
-      expect(result[0].missingFields).toContain('impact');
       expect(result[0].missingFields).toContain('suggestedApproach');
       expect(result[0].missingFields).toContain('successCriteria');
       expect(result[0].missingFields).toContain('dependencies');

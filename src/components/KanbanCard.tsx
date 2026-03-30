@@ -12,14 +12,6 @@ const departmentColors: Record<string, string> = {
   'sales-operations': 'bg-sky-100 text-sky-700',
 };
 
-const impactColors: Record<string, string> = {
-  Critical: 'bg-red-100 text-red-700',
-  'Very High': 'bg-orange-100 text-orange-700',
-  High: 'bg-amber-100 text-amber-700',
-  Medium: 'bg-yellow-100 text-yellow-700',
-  Low: 'bg-slate-100 text-slate-600',
-};
-
 const complexityColors: Record<string, string> = {
   Low: 'bg-emerald-100 text-emerald-700',
   Medium: 'bg-yellow-100 text-yellow-700',
@@ -30,7 +22,6 @@ const complexityColors: Record<string, string> = {
 export default function KanbanCard({ opportunity }: KanbanCardProps) {
   const { openModal } = usePriorityModal();
   const deptColor = departmentColors[opportunity.departmentSlug] ?? 'bg-slate-100 text-slate-600';
-  const impactColor = impactColors[opportunity.impact] ?? 'bg-slate-100 text-slate-500';
   const complexColor = complexityColors[opportunity.complexity] ?? 'bg-slate-100 text-slate-500';
 
   return (
@@ -52,9 +43,6 @@ export default function KanbanCard({ opportunity }: KanbanCardProps) {
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={`text-[10px] px-1.5 py-0.5 rounded ${complexColor}`}>
           {opportunity.complexity}
-        </span>
-        <span className={`text-[10px] px-1.5 py-0.5 rounded ${impactColor}`}>
-          {opportunity.impact}
         </span>
         <span className="ml-auto text-[10px] font-semibold text-emerald-600">
           {opportunity.score}

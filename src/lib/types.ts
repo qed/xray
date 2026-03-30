@@ -22,7 +22,6 @@ export interface AutomationPriority {
   name: string;
   effort: 'Low' | 'Medium' | 'High';
   complexity: 'Low' | 'Medium' | 'Medium-High' | 'High';
-  impact: 'Low' | 'Medium' | 'High' | 'Very High' | 'Critical';
   whatToAutomate: string;
   currentState: string;
   whyItMatters: string;
@@ -84,14 +83,13 @@ export interface RankedOpportunity {
   departmentName: string;
   rank: number;
   name: string;
-  impact: string;
   complexity: string;
   effort: string;
   estimatedTimeSavings: string;
   parsedTimeSavings: ParsedTimeSavings;
   milestoneStage: number;
   milestoneName: string;
-  score: number;                   // computed impact/effort ratio for ranking
+  score: number;                   // computed from time savings and effort for ranking
   whatToAutomate: string;
   currentState: string;
   whyItMatters: string;
@@ -106,8 +104,8 @@ export type ParsedTimeSavings =
   | { valid: false; rawText: string; issue: string };
 
 export interface Completeness {
-  score: number;   // 0-10
-  total: number;   // always 10
+  score: number;   // 0-9
+  total: number;   // always 9
   missing: string[]; // DB column names that are empty
 }
 
@@ -234,7 +232,6 @@ export interface DbPriority {
   name: string;
   effort: string;
   complexity: string;
-  impact: string;
   what_to_automate: string;
   current_state: string;
   why_it_matters: string;

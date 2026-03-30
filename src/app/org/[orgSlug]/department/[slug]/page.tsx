@@ -9,14 +9,13 @@ import PriorityCard from '@/components/PriorityCard';
 import MilestonePipeline from '@/components/MilestonePipeline';
 import RiskSection from '@/components/RiskSection';
 
-function toAutomationPriority(p: { rank: number; name: string; effort: string; complexity: string; impact: string; what_to_automate: string; current_state: string; why_it_matters: string; estimated_time_savings: string; suggested_approach: string; success_criteria: string; dependencies: string[]; status: string }, deptSlug: string): AutomationPriority {
+function toAutomationPriority(p: { rank: number; name: string; effort: string; complexity: string; what_to_automate: string; current_state: string; why_it_matters: string; estimated_time_savings: string; suggested_approach: string; success_criteria: string; dependencies: string[]; status: string }, deptSlug: string): AutomationPriority {
   return {
     departmentSlug: deptSlug,
     rank: p.rank,
     name: p.name,
     effort: p.effort as AutomationPriority['effort'],
     complexity: p.complexity as AutomationPriority['complexity'],
-    impact: p.impact as AutomationPriority['impact'],
     whatToAutomate: p.what_to_automate,
     currentState: p.current_state,
     whyItMatters: p.why_it_matters,

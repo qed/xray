@@ -16,7 +16,7 @@ export default async function PrioritiesPage({ params }: { params: Promise<{ org
     <div className="space-y-10">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 tracking-tight">AI Priorities</h1>
-        <p className="text-slate-500 mt-1">Automation opportunities ranked by impact</p>
+        <p className="text-slate-500 mt-1">Automation opportunities ranked by potential time savings</p>
       </div>
 
       {incompleteCount > 0 && (

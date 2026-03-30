@@ -262,7 +262,7 @@ export function parseTimeSavings(raw: string): ParsedTimeSavings {
 
 const REQUIRED_PRIORITY_FIELDS = [
   'name', 'what_to_automate', 'current_state', 'why_it_matters',
-  'estimated_time_savings', 'complexity', 'impact',
+  'estimated_time_savings', 'complexity',
   'suggested_approach', 'success_criteria', 'dependencies',
 ] as const;
 
@@ -275,7 +275,8 @@ export function getCompletenessScore(p: Record<string, unknown> | DbPriority): C
       missing.push(field);
     }
   }
-  return { score: 10 - missing.length, total: 10, missing };
+  const total = REQUIRED_PRIORITY_FIELDS.length;
+  return { score: total - missing.length, total, missing };
 }
 
 // ---------- Aggregation Functions ----------
@@ -294,14 +295,13 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
       departmentName: p.department.name,
       rank: p.rank,
       name: p.name,
-      impact: p.impact,
       complexity: p.complexity,
       effort: p.effort,
       estimatedTimeSavings: p.estimated_time_savings,
       parsedTimeSavings,
       milestoneStage,
       milestoneName,
-      score: computeScore(p.impact, p.effort),
+      score: computeScore(parsedTimeSavings.valid ? parsedTimeSavings.midpoint : 0, p.effort),
       whatToAutomate: p.what_to_automate,
       currentState: p.current_state,
       whyItMatters: p.why_it_matters,

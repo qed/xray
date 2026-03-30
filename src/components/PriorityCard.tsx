@@ -7,14 +7,6 @@ interface PriorityCardProps {
   opportunity: RankedOpportunity;
 }
 
-const impactColors: Record<string, string> = {
-  Critical: 'bg-red-100 text-red-700 border-red-200',
-  'Very High': 'bg-orange-100 text-orange-700 border-orange-200',
-  High: 'bg-amber-100 text-amber-700 border-amber-200',
-  Medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  Low: 'bg-slate-100 text-slate-600 border-slate-200',
-};
-
 const effortColors: Record<string, string> = {
   Low: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   Medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -54,7 +46,6 @@ export default function PriorityCard({ opportunity }: PriorityCardProps) {
         </div>
 
         <div className="flex flex-wrap gap-2 ml-10">
-          <Badge label="Impact" value={opportunity.impact} colorMap={impactColors} />
           <Badge label="Effort" value={opportunity.effort} colorMap={effortColors} />
           <Badge label="Complexity" value={opportunity.complexity} colorMap={complexityColors} />
           <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-md border bg-emerald-100 text-emerald-700 border-emerald-200">
