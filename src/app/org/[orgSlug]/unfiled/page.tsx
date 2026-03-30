@@ -42,7 +42,7 @@ export default async function UnfiledPage({ params }: { params: Promise<{ orgSlu
       {departmentGaps.length === 0 ? (
         <div className="bg-slate-50 border border-emerald-200 rounded-xl p-8 text-center">
           <p className="text-emerald-600 text-lg font-medium">All priorities are complete</p>
-          <p className="text-slate-500 mt-2 text-sm">Every priority has all 10 required fields filled in.</p>
+          <p className="text-slate-500 mt-2 text-sm">Every priority has all required fields filled in.</p>
         </div>
       ) : (
         <MissingGapsWorkflow departments={departmentGaps} />

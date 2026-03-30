@@ -185,10 +185,10 @@ function PriorityRow({ priority, expanded, onToggle }: { priority: RankedOpportu
 
               if (isMissing) {
                 return (
-                  <div key={field} className={field === 'dependencies' ? 'md:col-span-2' : ''}>
-                    <div className="text-[11px] font-semibold text-amber-600 mb-1">&#9888; {label} (missing)</div>
-                    <div className="text-xs text-amber-700 italic bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                      This field will be included in the generated prompt.
+                  <div key={field} className={`bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3 ${field === 'dependencies' ? 'md:col-span-2' : ''}`}>
+                    <div className="text-xs font-bold text-yellow-700 mb-1">&#9888; {label} — MISSING</div>
+                    <div className="text-xs text-yellow-600 italic">
+                      Will be included in the generated prompt.
                     </div>
                   </div>
                 );

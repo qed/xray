@@ -319,7 +319,7 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
 export async function getUnfiledRankedOpportunities(orgId: string): Promise<RankedOpportunity[]> {
   const all = await getTopWins(orgId, 1000);
   return all
-    .filter((opp) => opp.completeness.score < 10)
+    .filter((opp) => opp.completeness.score < opp.completeness.total)
     .sort((a, b) => a.completeness.score - b.completeness.score);
 }
 

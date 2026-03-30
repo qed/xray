@@ -124,7 +124,7 @@ export default function PrioritiesTable({
               <td className="px-4 py-3">
                 <span
                   className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                    opp.completeness.score === 10
+                    opp.completeness.score === opp.completeness.total
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-amber-100 text-amber-700'
                   }`}

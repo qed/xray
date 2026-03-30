@@ -10,7 +10,7 @@ export default async function PrioritiesPage({ params }: { params: Promise<{ org
 
   const allOpportunities = await getTopWins(org.id, 100);
   const valid = allOpportunities.filter((o) => o.parsedTimeSavings.valid);
-  const incompleteCount = allOpportunities.filter((o) => o.completeness.score < 10).length;
+  const incompleteCount = allOpportunities.filter((o) => o.completeness.score < o.completeness.total).length;
 
   return (
     <div className="space-y-10">

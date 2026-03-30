@@ -169,8 +169,6 @@ export function generateDepartmentPrompt(
   lines.push('');
   lines.push('**Success criteria:**');
   lines.push('[content]');
-  lines.push('');
-  lines.push('**Status:** [Not started/In Progress/etc.]');
   lines.push('```');
   lines.push('');
   lines.push('Include ALL fields for each priority (both the existing known data and the newly filled data). This file will be uploaded to X-Ray for parsing.');
