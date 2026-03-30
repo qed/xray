@@ -2,7 +2,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function InvitePage({ params }: { params: Promise<{ code: string }> }) {
-  const { code } = await params;
+  const { code: rawCode } = await params;
+  const code = rawCode.toLowerCase();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

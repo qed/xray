@@ -21,7 +21,7 @@ export default function JoinPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-      const { data: invite } = await supabase.from('invites').select('*, organization:organizations(*)').eq('code', inviteCode.trim().toUpperCase()).single();
+      const { data: invite } = await supabase.from('invites').select('*, organization:organizations(*)').eq('code', inviteCode.trim().toLowerCase()).single();
       if (!invite) { setError('Invalid invite code'); setLoading(false); return; }
       if (invite.expires_at && new Date(invite.expires_at) < new Date()) { setError('This invite code has expired'); setLoading(false); return; }
       if (invite.max_uses && invite.use_count >= invite.max_uses) { setError('This invite code has reached its maximum uses'); setLoading(false); return; }
@@ -72,7 +72,7 @@ export default function JoinPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Invite Code</label>
               <input type="text" value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} required
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm uppercase" placeholder="ABCD1234" />
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="abcd1234" />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button type="submit" disabled={loading}

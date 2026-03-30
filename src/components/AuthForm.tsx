@@ -34,27 +34,7 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
         return;
       }
 
-      const { data: memberships, error: memErr } = await supabase
-        .from('org_members')
-        .select('org_id, organization:organizations(slug)')
-        .limit(1);
-
-      if (memErr) {
-        setError(memErr.message);
-        setLoading(false);
-        return;
-      }
-
-      if (memberships && memberships.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const slug = (memberships[0] as any).organization?.slug;
-        if (slug) {
-          window.location.href = `/org/${slug}/priorities`;
-          return;
-        }
-      }
-
-      window.location.href = '/join';
+      window.location.href = '/orgs';
     } catch (err) {
       setError(`Unexpected error: ${err}`);
       setLoading(false);

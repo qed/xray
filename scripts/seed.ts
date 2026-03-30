@@ -42,7 +42,7 @@ async function seed() {
     console.log(`Created org: ${org.name}`);
 
     // Create invite code
-    const code = org.slug.toUpperCase().replace(/-/g, '') + '2026';
+    const code = org.slug.replace(/-/g, '') + '2026';
     await supabase
       .from('invites')
       .upsert({ org_id: orgData.id, code, created_by: null }, { onConflict: 'code' });
@@ -153,7 +153,7 @@ async function seed() {
   console.log('\nSeeding complete!');
   console.log('\nInvite codes:');
   for (const org of ORGS) {
-    const code = org.slug.toUpperCase().replace(/-/g, '') + '2026';
+    const code = org.slug.replace(/-/g, '') + '2026';
     console.log(`  ${org.name}: ${code}`);
   }
 }

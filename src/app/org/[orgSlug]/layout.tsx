@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getOrgBySlug, getUserOrgs, getUserRole, getUnfiledRankedOpportunities } from '@/lib/db';
-import OrgSwitcher from '@/components/OrgSwitcher';
+import { getOrgBySlug, getUserRole, getUnfiledRankedOpportunities } from '@/lib/db';
 import UserMenu from '@/components/UserMenu';
 import { PriorityModalProvider } from '@/components/PriorityModalContext';
 
@@ -24,12 +23,6 @@ export default async function OrgLayout({
 
   const role = await getUserRole(org.id, user.id);
   if (!role) redirect('/join');
-
-  const userOrgs = await getUserOrgs(user.id);
-  const allOrgs = userOrgs.map((m) => ({
-    slug: m.organization.slug,
-    name: m.organization.name,
-  }));
 
   const unfiled = await getUnfiledRankedOpportunities(org.id);
   const unfiledCount = unfiled.length;
@@ -55,7 +48,9 @@ export default async function OrgLayout({
             <Link href={base} className="text-white font-bold text-lg tracking-tight shrink-0">
               X-Ray
             </Link>
-            <OrgSwitcher currentOrg={{ slug: orgSlug, name: org.name }} allOrgs={allOrgs} />
+            <Link href="/orgs" className="text-sm font-semibold text-white hover:text-emerald-300 transition-colors">
+              {org.name}
+            </Link>
 
             <div className="flex-1 flex items-center gap-1 overflow-x-auto">
               {navLinks.map((link) => (

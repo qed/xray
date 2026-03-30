@@ -29,7 +29,7 @@ export default function InviteManager({ invites, orgId }: InviteManagerProps) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const code = Math.random().toString(36).substring(2, 10);
     await supabase.from('invites').insert({
       org_id: orgId,
       code,

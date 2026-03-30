@@ -91,6 +91,29 @@ export async function getOrgInvites(orgId: string): Promise<Invite[]> {
   return data ?? [];
 }
 
+// ---------- Org Stats ----------
+
+export async function getOrgStats(orgId: string): Promise<{ departmentCount: number; priorityCount: number }> {
+  const supabase = await createClient();
+  const [{ count: deptCount }, { count: prioCount }] = await Promise.all([
+    supabase.from('departments').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+    supabase.from('priorities').select('*, departments!inner(org_id)', { count: 'exact', head: true }).eq('departments.org_id', orgId),
+  ]);
+  return { departmentCount: deptCount ?? 0, priorityCount: prioCount ?? 0 };
+}
+
+export async function getFirstInviteCode(orgId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('invites')
+    .select('code')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single();
+  return data?.code ?? null;
+}
+
 // ---------- Department Queries ----------
 
 export async function getDepartments(orgId: string): Promise<DbDepartment[]> {

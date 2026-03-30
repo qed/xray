@@ -45,6 +45,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // /orgs page — authenticated but no org membership check needed
+  if (pathname === '/orgs') {
+    return response;
+  }
+
   if (pathname.startsWith('/org/')) {
     const orgSlug = pathname.split('/')[2];
     if (orgSlug) {
