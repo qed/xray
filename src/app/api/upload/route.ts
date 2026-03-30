@@ -38,6 +38,16 @@ export async function POST(request: NextRequest) {
     departmentName = newDepartmentName;
   }
 
+  // Archive the uploaded file
+  await supabase.from('uploads').insert({
+    org_id: orgId,
+    department_slug: departmentSlug,
+    file_type: fileType,
+    filename: file.name,
+    content: text,
+    uploaded_by: user.id,
+  });
+
   // Ensure department exists
   let { data: dept } = await supabase
     .from('departments')
@@ -84,6 +94,24 @@ export async function POST(request: NextRequest) {
           }))
         );
       }
+
+      // Return profile parsing summary
+      return NextResponse.json({
+        slug: departmentSlug,
+        summary: {
+          type: 'profile',
+          departmentName: profile.name || dept.name,
+          fields: {
+            mission: !!profile.mission,
+            scope: !!profile.scope,
+            teamMembers: profile.teamMembers.length,
+            tools: profile.tools.length,
+            singlePointsOfFailure: profile.singlePointsOfFailure.length,
+            painPoints: profile.painPoints.length,
+            tribalKnowledgeRisks: profile.tribalKnowledgeRisks.length,
+          },
+        },
+      });
     } else {
       const priorities = parsePriorities(text);
 
@@ -123,9 +151,26 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-    }
 
-    return NextResponse.json({ slug: departmentSlug });
+      // Return priorities parsing summary
+      const prioritySummaries = priorities.map((p) => ({
+        rank: p.rank,
+        name: p.name,
+        missingFields: p.missingFields,
+        filledCount: 9 - p.missingFields.length,
+        totalFields: 9,
+      }));
+
+      return NextResponse.json({
+        slug: departmentSlug,
+        summary: {
+          type: 'priorities',
+          totalPriorities: priorities.length,
+          priorities: prioritySummaries,
+          totalMissingFields: priorities.reduce((sum, p) => sum + p.missingFields.length, 0),
+        },
+      });
+    }
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
