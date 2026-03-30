@@ -273,6 +273,11 @@ export function getCompletenessScore(p: Record<string, unknown> | DbPriority): C
     const value = record[field];
     if (Array.isArray(value) ? value.length === 0 : !value) {
       missing.push(field);
+    } else if (field === 'estimated_time_savings' && typeof value === 'string') {
+      const parsed = parseTimeSavings(value);
+      if (!parsed.valid) {
+        missing.push(field);
+      }
     }
   }
   const total = REQUIRED_PRIORITY_FIELDS.length;
