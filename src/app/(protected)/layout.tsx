@@ -10,8 +10,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   if (!user) redirect('/login');
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800">
+    <div className="fixed inset-0 flex flex-col bg-slate-50">
+      <nav className="shrink-0 bg-slate-900 border-b border-slate-800">
         <div className="max-w-screen-2xl mx-auto px-4 flex items-center justify-between h-14">
           <Link href="/orgs" className="text-white font-bold text-lg tracking-tight">
             X-Ray
@@ -19,8 +19,10 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           <UserMenu email={user.email ?? ''} />
         </div>
       </nav>
-      <main className="max-w-screen-2xl mx-auto px-4 py-8">
-        {children}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-screen-2xl mx-auto px-4 py-8">
+          {children}
+        </div>
       </main>
     </div>
   );
