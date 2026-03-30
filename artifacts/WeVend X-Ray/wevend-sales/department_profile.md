@@ -1,4 +1,4 @@
-# Sales — Department Profile
+# WeVend Sales — Department Profile
 **Date:** March 27, 2026
 **Interviewed:** Oswin Menezes, Head of Sales
 **Interviewer:** Claude (Department X-Ray)

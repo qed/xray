@@ -1,4 +1,4 @@
-# Sales — Automation & Agent Priorities
+# WeVend Sales — Automation & Agent Priorities
 **Date:** March 27, 2026
 **Source:** Department X-Ray interview with Oswin Menezes, Head of Sales
 **Review Cadence:** Weekly with Peter Kuperman
