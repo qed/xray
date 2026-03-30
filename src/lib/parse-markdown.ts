@@ -71,6 +71,7 @@ type HeadingFormat = '###' | '##';
  */
 function detectFormat(text: string): HeadingFormat {
   if (/^###\s+Priority\s+\d+/m.test(text)) return '###';
+  if (/^###\s+#\d+/m.test(text)) return '###';
   return '##';
 }
 
@@ -82,11 +83,11 @@ function detectFormat(text: string): HeadingFormat {
  */
 function buildSplitRegex(fmt: HeadingFormat): RegExp {
   if (fmt === '###') {
-    // ### Priority 1: Name here
-    return /^###\s+Priority\s+(\d+)/gm;
+    // ### Priority 1: Name here  OR  ### #1 — Name here
+    return /^###\s+(?:Priority\s+)?#?(\d+)/gm;
   }
   // ## Priority 1 — Name here  (em-dash, en-dash, or plain dash)
-  return /^##\s+Priority\s+(\d+)/gm;
+  return /^##\s+(?:Priority\s+)?#?(\d+)/gm;
 }
 
 /* ------------------------------------------------------------------ */
@@ -109,7 +110,7 @@ function parseSummaryTable(text: string): Record<number, string> {
     // Detect header row with rank + time columns
     if (
       line.includes('|') &&
-      /rank/i.test(line) &&
+      /(rank|^[|\s]*#[|\s])/i.test(line) &&
       /(time\s*sav|est\.\s*time|net\s*time)/i.test(line)
     ) {
       const headers = line.split('|').map((c) => c.trim());
@@ -305,6 +306,7 @@ export function parsePriorities(text: string): ParsedPriority[] {
 
     const suggestedApproach =
       findSection('suggested approach') ||
+      findSection('recommended approach') ||
       findSection('approach') ||
       findSection('recommendation');
 
@@ -379,8 +381,8 @@ export function parseProfile(text: string): ParsedProfile {
         continue;
       }
       if (inSection && /^#{1,3}\s/.test(line)) break;
-      if (inSection && line.startsWith('- ')) {
-        items.push(line.replace(/^-\s*/, '').trim());
+      if (inSection && /^[-*]\s/.test(line)) {
+        items.push(line.replace(/^[-*]\s*/, '').trim());
       }
     }
     return items;
@@ -405,11 +407,11 @@ export function parseProfile(text: string): ParsedProfile {
   let inTeamSection = false;
   let pastHeader = false;
   for (const line of lines) {
-    if (line.match(/^#{1,3}\s.*team/i)) {
+    if (line.match(/^#{1,3}\s.*(?:team|people\s*&?\s*roles)/i)) {
       inTeamSection = true;
       continue;
     }
-    if (inTeamSection && /^#{1,3}\s/.test(line) && !line.match(/team/i)) break;
+    if (inTeamSection && /^#{1,3}\s/.test(line) && !line.match(/(?:team|people\s*&?\s*roles)/i)) break;
     if (inTeamSection && line.includes('|') && line.includes('---')) {
       pastHeader = true;
       continue;
@@ -429,19 +431,52 @@ export function parseProfile(text: string): ParsedProfile {
   // Department name from `# Heading`
   const name = (lines.find((l) => /^#\s/.test(l)) ?? '')
     .replace(/^#\s*/, '')
+    .replace(/\s*[—–\-]+\s*department\s*profile/i, '')
     .replace(/department\s*profile/i, '')
     .replace(/\s*[—–\-]+\s*$/, '')
     .replace(/^\s*[—–\-]+\s*/, '')
+    .replace(/\s+department\s*$/i, '')
     .trim();
+
+  // Extract table first column values under a heading (for table-based sections)
+  function extractTableColumn(heading: string, colIndex = 0): string[] {
+    const items: string[] = [];
+    let inSection = false;
+    let pastHeader = false;
+    for (const line of lines) {
+      if (line.match(new RegExp(`^#{1,3}\\s.*${heading}`, 'i'))) {
+        inSection = true;
+        pastHeader = false;
+        continue;
+      }
+      if (inSection && /^#{1,3}\s/.test(line)) break;
+      if (inSection && line.includes('|') && line.includes('---')) {
+        pastHeader = true;
+        continue;
+      }
+      if (inSection && pastHeader && line.includes('|')) {
+        const cols = line.split('|').map((c) => c.trim()).filter(Boolean);
+        if (cols[colIndex] && !/^\*?\*?total\*?\*?$/i.test(cols[colIndex])) {
+          items.push(cols[colIndex]);
+        }
+      }
+    }
+    return items;
+  }
+
+  const tools = extractSection('tools') || extractSection('software') || extractTableColumn('tools');
+  const painPoints = extractSection('pain point') || extractSection('bottleneck');
+  const singlePointsOfFailure = extractSection('single point');
+  const tribalKnowledgeRisks = extractSection('tribal knowledge');
 
   return {
     name,
-    mission: extractText('mission') || extractText('purpose'),
-    scope: extractText('scope'),
+    mission: extractText('mission') || extractText('purpose') || extractText('primary focus'),
+    scope: extractText('scope') || extractText('responsibility'),
     teamMembers,
-    tools: extractSection('tools') || extractSection('software'),
-    singlePointsOfFailure: extractSection('single point'),
-    painPoints: extractSection('pain point'),
-    tribalKnowledgeRisks: extractSection('tribal knowledge'),
+    tools,
+    singlePointsOfFailure,
+    painPoints,
+    tribalKnowledgeRisks,
   };
 }
