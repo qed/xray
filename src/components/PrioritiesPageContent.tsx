@@ -12,15 +12,15 @@ interface Department {
 
 interface Props {
   opportunities: RankedOpportunity[];
+  allOpportunities: RankedOpportunity[];
   departments: Department[];
-  incompleteCount: number;
   orgSlug: string;
 }
 
 export default function PrioritiesPageContent({
   opportunities,
+  allOpportunities,
   departments,
-  incompleteCount,
   orgSlug,
 }: Props) {
   const [selectedDept, setSelectedDept] = useState('__all__');
@@ -29,6 +29,21 @@ export default function PrioritiesPageContent({
     if (selectedDept === '__all__') return opportunities;
     return opportunities.filter((o) => o.departmentSlug === selectedDept);
   }, [selectedDept, opportunities]);
+
+  const incompleteCount = useMemo(() => {
+    const opps = selectedDept === '__all__'
+      ? allOpportunities
+      : allOpportunities.filter((o) => o.departmentSlug === selectedDept);
+    return opps.filter((o) => o.completeness.score < o.completeness.total).length;
+  }, [selectedDept, allOpportunities]);
+
+  const deptName = selectedDept === '__all__'
+    ? null
+    : departments.find((d) => d.slug === selectedDept)?.name ?? null;
+
+  const unfiledHref = selectedDept === '__all__'
+    ? `/org/${orgSlug}/unfiled`
+    : `/org/${orgSlug}/unfiled?dept=${selectedDept}`;
 
   return (
     <div className="space-y-10">
@@ -54,8 +69,8 @@ export default function PrioritiesPageContent({
       {incompleteCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
           <p className="text-amber-800 text-sm">
-            {incompleteCount} {incompleteCount === 1 ? 'priority has' : 'priorities have'} incomplete data.{' '}
-            <Link href={`/org/${orgSlug}/unfiled`} className="font-medium underline hover:text-amber-900">
+            {deptName ? `${deptName} has` : ''} {incompleteCount} {incompleteCount === 1 ? 'priority' : 'priorities'} with incomplete data.{' '}
+            <Link href={unfiledHref} className="font-medium underline hover:text-amber-900">
               Fill Missing Gaps
             </Link>{' '}
             to improve your analysis.
@@ -65,7 +80,7 @@ export default function PrioritiesPageContent({
 
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">
-          {selectedDept === '__all__' ? 'All Priorities' : departments.find((d) => d.slug === selectedDept)?.name ?? 'Priorities'}
+          {selectedDept === '__all__' ? 'All Priorities' : deptName ?? 'Priorities'}
         </h2>
         <PrioritiesTable opportunities={filtered} />
       </div>

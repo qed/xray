@@ -15,13 +15,12 @@ export default async function PrioritiesPage({ params }: { params: Promise<{ org
   const complete = allOpportunities.filter(
     (o) => o.completeness.score === o.completeness.total
   );
-  const incompleteCount = allOpportunities.length - complete.length;
 
   return (
     <PrioritiesPageContent
       opportunities={complete}
+      allOpportunities={allOpportunities}
       departments={departments.map((d) => ({ slug: d.slug, name: d.name }))}
-      incompleteCount={incompleteCount}
       orgSlug={orgSlug}
     />
   );

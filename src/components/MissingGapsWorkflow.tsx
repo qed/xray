@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import type { DbDepartment, DbTeamMember, RankedOpportunity } from '@/lib/types';
 import { generateDepartmentPrompt } from '@/lib/generate-prompt';
 
@@ -228,12 +228,22 @@ function PriorityRow({ priority, expanded, onToggle }: { priority: RankedOpportu
 
 export default function MissingGapsWorkflow({ departments }: Props) {
   const params = useParams();
+  const searchParams = useSearchParams();
   const orgSlug = params?.orgSlug as string;
 
   const [activeDept, setActiveDept] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [workflowStep, setWorkflowStep] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  // Pre-select department tab from query param
+  useEffect(() => {
+    const deptParam = searchParams.get('dept');
+    if (deptParam) {
+      const idx = departments.findIndex((d) => d.department.slug === deptParam);
+      if (idx >= 0) setActiveDept(idx);
+    }
+  }, [searchParams, departments]);
 
   const current = departments[activeDept];
 
