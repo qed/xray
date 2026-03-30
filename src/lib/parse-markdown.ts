@@ -430,6 +430,8 @@ export function parseProfile(text: string): ParsedProfile {
   const name = (lines.find((l) => /^#\s/.test(l)) ?? '')
     .replace(/^#\s*/, '')
     .replace(/department\s*profile/i, '')
+    .replace(/\s*[—–\-]+\s*$/, '')
+    .replace(/^\s*[—–\-]+\s*/, '')
     .trim();
 
   return {
