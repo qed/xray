@@ -41,7 +41,7 @@ export function generateDepartmentPrompt(
 
   lines.push(`# Missing Data Collection: ${department.name} Department`);
   lines.push('');
-  lines.push('You are helping collect missing information for automation priorities. Below is the department context and the priorities that have incomplete data. For each priority, fill in ONLY the missing fields based on your knowledge of the department and its operations.');
+  lines.push('You are helping collect missing information for automation priorities. Below is the department context and the priorities that have incomplete data. For each priority, fill in ONLY the missing fields based on your knowledge of the department and its operations. Please ask me questions 1 by 1 to go through the list of missing priorities. Push me hard to get it right. With every question, give me an update on how many more pieces of missing data need to be filled before the task is complete.');
   lines.push('');
 
   // Department context
