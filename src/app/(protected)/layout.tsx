@@ -10,7 +10,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   if (!user) redirect('/login');
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       <nav className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800">
         <div className="max-w-screen-2xl mx-auto px-4 flex items-center justify-between h-14">
           <Link href="/orgs" className="text-white font-bold text-lg tracking-tight">
