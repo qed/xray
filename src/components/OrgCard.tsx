@@ -58,9 +58,13 @@ export default function OrgCard({ name, slug, role, departmentCount, priorityCou
           <button
             type="button"
             onClick={handleCopy}
-            className="ml-auto text-[10px] text-slate-400 hover:text-emerald-600 transition-colors"
+            className={`ml-auto px-2.5 py-1 text-xs font-medium rounded-full border transition-all ${
+              copied
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-400 hover:text-emerald-600'
+            }`}
           >
-            {copied ? 'Copied!' : 'copy'}
+            {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
       )}
