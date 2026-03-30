@@ -45,7 +45,7 @@ export default async function OrgLayout({
       <div className="min-h-screen bg-white">
         <nav className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800">
           <div className="max-w-screen-2xl mx-auto px-4 flex items-center h-14 gap-6">
-            <Link href={base} className="text-white font-bold text-lg tracking-tight shrink-0">
+            <Link href="/orgs" className="text-white font-bold text-lg tracking-tight shrink-0">
               X-Ray
             </Link>
             <Link href="/orgs" className="text-sm font-semibold text-white hover:text-emerald-300 transition-colors">
