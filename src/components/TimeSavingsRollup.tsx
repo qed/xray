@@ -42,19 +42,19 @@ export default function TimeSavingsRollup({
       <div className="grid grid-cols-3 gap-4">
         <div className="text-center">
           <p className="text-2xl font-bold text-slate-900">
-            {totalPotentialHoursPerWeek}
+            {Math.round(totalPotentialHoursPerWeek)}
           </p>
           <p className="text-sm text-slate-500">Potential hrs/wk</p>
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold text-emerald-600">
-            {realizedHoursPerWeek}
+            {Math.round(realizedHoursPerWeek)}
           </p>
           <p className="text-sm text-slate-500">Realized hrs/wk</p>
         </div>
         <div className="text-center">
           <p className="text-2xl font-bold text-amber-600">
-            {remainingHoursPerWeek}
+            {Math.round(remainingHoursPerWeek)}
           </p>
           <p className="text-sm text-slate-500">Remaining hrs/wk</p>
         </div>
