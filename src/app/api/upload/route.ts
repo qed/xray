@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getUserRole } from '@/lib/db';
 import { parsePriorities, parseProfile } from '@/lib/parse-markdown';
 
 export async function POST(request: NextRequest) {
@@ -15,6 +16,11 @@ export async function POST(request: NextRequest) {
   const slug = formData.get('slug') as string;
   const orgId = formData.get('orgId') as string;
   const newDepartmentName = formData.get('newDepartmentName') as string | null;
+
+  const role = await getUserRole(orgId, user.id);
+  if (role !== 'owner') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   if (!file || !file.name.endsWith('.md')) {
     return NextResponse.json({ error: 'File must be .md format' }, { status: 400 });

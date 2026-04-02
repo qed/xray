@@ -181,6 +181,7 @@ export interface Organization {
   id: string;
   name: string;
   slug: string;
+  team_names: string[];
   created_at: string;
 }
 
@@ -197,6 +198,7 @@ export interface Invite {
   org_id: string;
   code: string;
   email: string | null;
+  role: 'owner' | 'admin' | 'member';
   max_uses: number | null;
   use_count: number;
   expires_at: string | null;

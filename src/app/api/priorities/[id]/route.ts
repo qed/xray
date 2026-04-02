@@ -41,7 +41,7 @@ export async function PATCH(
     .eq('user_id', user.id)
     .single();
 
-  if (!membership) {
+  if (!membership || membership.role !== 'owner') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

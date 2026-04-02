@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getOrgBySlug, getUserRole, getUnfiledRankedOpportunities } from '@/lib/db';
 import UserMenu from '@/components/UserMenu';
 import { PriorityModalProvider } from '@/components/PriorityModalContext';
+import { RoleProvider } from '@/components/RoleContext';
 
 export default async function OrgLayout({
   children,
@@ -29,18 +30,21 @@ export default async function OrgLayout({
 
   const base = `/org/${orgSlug}`;
 
-  const navLinks = [
-    { href: `${base}/priorities`, label: 'AI Priorities' },
-    { href: `${base}/dashboard`, label: 'Dashboard' },
-    { href: `${base}/tracker`, label: 'Tracker' },
-    { href: `${base}/risks`, label: 'Risks' },
-    { href: `${base}/dependencies`, label: 'Dependencies' },
-    { href: `${base}/tools`, label: 'Tools' },
-    { href: `${base}/unfiled`, label: 'Missing Gaps', badge: unfiledCount > 0 ? unfiledCount : undefined },
-    { href: `${base}/upload`, label: 'Upload' },
+  const allNavLinks = [
+    { href: `${base}/priorities`, label: 'AI Priorities', roles: ['owner', 'admin'] },
+    { href: `${base}/dashboard`, label: 'Dashboard', roles: ['owner', 'admin'] },
+    { href: `${base}/tracker`, label: 'Tracker', roles: ['owner'] },
+    { href: `${base}/risks`, label: 'Risks', roles: ['owner'] },
+    { href: `${base}/dependencies`, label: 'Dependencies', roles: ['owner'] },
+    { href: `${base}/tools`, label: 'Tools', roles: ['owner'] },
+    { href: `${base}/unfiled`, label: 'Missing Gaps', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner'] },
+    { href: `${base}/upload`, label: 'Upload', roles: ['owner'] },
   ];
 
+  const navLinks = allNavLinks.filter((link) => link.roles.includes(role));
+
   return (
+    <RoleProvider role={role as 'owner' | 'admin' | 'member'}>
     <PriorityModalProvider>
       <div className="min-h-screen bg-white">
         <nav className="sticky top-0 z-40 bg-slate-900 border-b border-slate-800">
@@ -78,5 +82,6 @@ export default async function OrgLayout({
         </main>
       </div>
     </PriorityModalProvider>
+    </RoleProvider>
   );
 }

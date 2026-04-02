@@ -18,7 +18,7 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
   if (invite.expires_at && new Date(invite.expires_at) < new Date()) redirect('/join');
   if (invite.max_uses && invite.use_count >= invite.max_uses) redirect('/join');
 
-  await supabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: 'member' });
+  await supabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: invite.role ?? 'member' });
   await supabase.from('invites').update({ use_count: invite.use_count + 1 }).eq('id', invite.id);
 
   redirect(`/org/${invite.organization.slug}/priorities`);
