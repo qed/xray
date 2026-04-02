@@ -31,12 +31,14 @@ export default async function OrgLayout({
   const base = `/org/${orgSlug}`;
 
   const allNavLinks = [
+    { href: `${base}/intake`, label: 'Intake', roles: ['owner', 'member'] },
     { href: `${base}/priorities`, label: 'AI Priorities', roles: ['owner', 'admin'] },
     { href: `${base}/dashboard`, label: 'Dashboard', roles: ['owner', 'admin'] },
     { href: `${base}/tracker`, label: 'Tracker', roles: ['owner'] },
     { href: `${base}/risks`, label: 'Risks', roles: ['owner'] },
     { href: `${base}/dependencies`, label: 'Dependencies', roles: ['owner'] },
     { href: `${base}/tools`, label: 'Tools', roles: ['owner'] },
+    { href: `${base}/review`, label: 'Review', roles: ['owner'] },
     { href: `${base}/unfiled`, label: 'Missing Gaps', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner'] },
     { href: `${base}/upload`, label: 'Upload', roles: ['owner'] },
   ];
