@@ -31,6 +31,7 @@ export default async function OrgLayout({
   const base = `/org/${orgSlug}`;
 
   const allNavLinks = [
+    { href: `${base}/team`, label: 'My Team', roles: ['member'] },
     { href: `${base}/intake`, label: 'Intake', roles: ['owner', 'member'] },
     { href: `${base}/priorities`, label: 'AI Priorities', roles: ['owner', 'admin'] },
     { href: `${base}/dashboard`, label: 'Dashboard', roles: ['owner', 'admin'] },
