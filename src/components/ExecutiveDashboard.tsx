@@ -4,14 +4,17 @@ import type {
   DepartmentSummary,
   TimeSavingsRollup as TimeSavingsRollupType,
   RankedOpportunity,
+  StaffingOverview,
 } from '@/lib/types';
 import DepartmentCard from './DepartmentCard';
 import TimeSavingsRollup from './TimeSavingsRollup';
+import PdfDownloadButton from './PdfDownloadButton';
 
 interface Props {
   departments: DepartmentSummary[];
   timeSavings: TimeSavingsRollupType;
   allOpportunities: RankedOpportunity[];
+  staffing: StaffingOverview[];
   orgSlug: string;
   orgName: string;
 }
@@ -20,6 +23,7 @@ export default function ExecutiveDashboard({
   departments,
   timeSavings,
   allOpportunities,
+  staffing,
   orgSlug,
   orgName,
 }: Props) {
@@ -33,9 +37,18 @@ export default function ExecutiveDashboard({
   return (
     <div className="space-y-10">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{orgName}</h1>
-        <p className="text-slate-500 mt-1">AI & Automation Readiness Overview</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{orgName}</h1>
+          <p className="text-slate-500 mt-1">AI & Automation Readiness Overview</p>
+        </div>
+        <PdfDownloadButton
+          orgName={orgName}
+          departments={departments}
+          timeSavings={timeSavings}
+          allOpportunities={allOpportunities}
+          staffing={staffing}
+        />
       </div>
 
       {/* Readiness overview cards */}

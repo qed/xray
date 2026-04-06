@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getOrgBySlug, getUserRole, getCompanyOverview, getTimeSavingsRollup, getStrategicBlockers, getTopWins } from '@/lib/db';
+import { getOrgBySlug, getUserRole, getCompanyOverview, getTimeSavingsRollup, getStrategicBlockers, getTopWins, getStaffingOverview } from '@/lib/db';
 import DashboardContent from '@/components/DashboardContent';
 import ExecutiveDashboard from '@/components/ExecutiveDashboard';
 
@@ -16,11 +16,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ orgS
   const role = await getUserRole(org.id, user.id);
   if (!role) redirect('/join');
 
-  const [overview, timeSavings, blockers, allOpportunities] = await Promise.all([
+  const [overview, timeSavings, blockers, allOpportunities, staffing] = await Promise.all([
     getCompanyOverview(org.id),
     getTimeSavingsRollup(org.id),
     getStrategicBlockers(org.id),
     getTopWins(org.id, 1000),
+    getStaffingOverview(org.id),
   ]);
 
   if (role === 'admin') {
@@ -29,6 +30,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ orgS
         departments={overview.departments}
         timeSavings={timeSavings}
         allOpportunities={allOpportunities}
+        staffing={staffing}
         orgSlug={orgSlug}
         orgName={org.name}
       />

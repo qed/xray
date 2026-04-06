@@ -1,0 +1,488 @@
+'use client';
+
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+} from '@react-pdf/renderer';
+import type {
+  DepartmentSummary,
+  TimeSavingsRollup,
+  RankedOpportunity,
+  StaffingOverview,
+} from '@/lib/types';
+
+const colors = {
+  emerald: '#059669',
+  amber: '#d97706',
+  slate900: '#0f172a',
+  slate600: '#475569',
+  slate400: '#94a3b8',
+  slate200: '#e2e8f0',
+  slate50: '#f8fafc',
+  white: '#ffffff',
+};
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    color: colors.slate900,
+  },
+  // Cover
+  coverPage: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100%',
+  },
+  coverTitle: {
+    fontSize: 32,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.slate900,
+    marginBottom: 8,
+  },
+  coverSubtitle: {
+    fontSize: 16,
+    color: colors.emerald,
+    marginBottom: 4,
+  },
+  coverDate: {
+    fontSize: 12,
+    color: colors.slate400,
+    marginTop: 20,
+  },
+  // Section headers
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.slate900,
+    marginBottom: 16,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: colors.slate600,
+    marginBottom: 12,
+  },
+  // Stat cards
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.slate50,
+    borderRadius: 6,
+    padding: 12,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+  },
+  statLabel: {
+    fontSize: 8,
+    color: colors.slate600,
+    marginTop: 4,
+  },
+  // Table
+  table: {
+    marginBottom: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: colors.slate900,
+    padding: 8,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+  },
+  tableHeaderText: {
+    color: colors.white,
+    fontSize: 8,
+    fontFamily: 'Helvetica-Bold',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.slate200,
+  },
+  tableRowAlt: {
+    flexDirection: 'row',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.slate200,
+    backgroundColor: colors.slate50,
+  },
+  tableCell: {
+    fontSize: 9,
+  },
+  // Progress bar
+  progressBarBg: {
+    height: 6,
+    backgroundColor: colors.slate200,
+    borderRadius: 3,
+    width: '100%',
+  },
+  progressBarFill: {
+    height: 6,
+    backgroundColor: colors.emerald,
+    borderRadius: 3,
+  },
+  // Priority card
+  priorityCard: {
+    marginBottom: 10,
+    padding: 10,
+    backgroundColor: colors.slate50,
+    borderRadius: 4,
+  },
+  priorityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  priorityName: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    flex: 1,
+  },
+  priorityMeta: {
+    fontSize: 8,
+    color: colors.slate600,
+  },
+  priorityDesc: {
+    fontSize: 9,
+    color: colors.slate600,
+    marginTop: 4,
+  },
+  badge: {
+    fontSize: 7,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 3,
+    marginLeft: 6,
+  },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 40,
+    right: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    fontSize: 8,
+    color: colors.slate400,
+  },
+  // Department page header
+  deptHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.emerald,
+  },
+  deptName: {
+    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+    color: colors.slate900,
+  },
+  deptStats: {
+    alignItems: 'flex-end',
+  },
+});
+
+interface PdfReportProps {
+  orgName: string;
+  departments: DepartmentSummary[];
+  timeSavings: TimeSavingsRollup;
+  allOpportunities: RankedOpportunity[];
+  staffing: StaffingOverview[];
+}
+
+function PageFooter({ orgName }: { orgName: string }) {
+  return (
+    <View style={styles.footer} fixed>
+      <Text>{orgName} — AI & Automation Readiness Report</Text>
+      <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+    </View>
+  );
+}
+
+function CoverPage({ orgName }: { orgName: string }) {
+  const today = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  return (
+    <Page size="LETTER" style={styles.coverPage}>
+      <Text style={styles.coverTitle}>{orgName}</Text>
+      <Text style={styles.coverSubtitle}>AI & Automation Readiness Report</Text>
+      <Text style={styles.coverDate}>{today}</Text>
+      <Text style={{ fontSize: 10, color: colors.slate400, marginTop: 8 }}>
+        Generated by X-Ray
+      </Text>
+    </Page>
+  );
+}
+
+function RollupPage({
+  orgName,
+  departments,
+  timeSavings,
+  topOpportunities,
+  staffing,
+}: {
+  orgName: string;
+  departments: DepartmentSummary[];
+  timeSavings: TimeSavingsRollup;
+  topOpportunities: RankedOpportunity[];
+  staffing: StaffingOverview[];
+}) {
+  const totalOpps = departments.reduce((s, d) => s + d.totalPriorities, 0);
+  const deptsActive = departments.filter((d) => d.progressPercent > 0).length;
+
+  return (
+    <Page size="LETTER" style={styles.page}>
+      <Text style={styles.sectionTitle}>Organization Overview</Text>
+
+      {/* Stat cards */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.slate900 }]}>{totalOpps}</Text>
+          <Text style={styles.statLabel}>Total Opportunities</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.emerald }]}>
+            {Math.round(timeSavings.totalPotentialHoursPerWeek)} hrs/wk
+          </Text>
+          <Text style={styles.statLabel}>Potential Savings</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.emerald }]}>
+            {Math.round(timeSavings.realizedHoursPerWeek)} hrs/wk
+          </Text>
+          <Text style={styles.statLabel}>Realized Savings</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.slate900 }]}>
+            {deptsActive}/{departments.length}
+          </Text>
+          <Text style={styles.statLabel}>Departments Active</Text>
+        </View>
+      </View>
+
+      {/* Department summary table */}
+      <Text style={styles.sectionSubtitle}>Departments</Text>
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, { width: '30%' }]}>Department</Text>
+          <Text style={[styles.tableHeaderText, { width: '12%' }]}>Team</Text>
+          <Text style={[styles.tableHeaderText, { width: '15%' }]}>Priorities</Text>
+          <Text style={[styles.tableHeaderText, { width: '15%' }]}>Hrs/wk</Text>
+          <Text style={[styles.tableHeaderText, { width: '28%' }]}>Readiness</Text>
+        </View>
+        {[...departments]
+          .sort((a, b) => b.progressPercent - a.progressPercent)
+          .map((dept, i) => {
+            const staff = staffing.find((s) => s.slug === dept.slug);
+            const deptTime = timeSavings.byDepartment.find((d) => d.slug === dept.slug);
+            return (
+              <View key={dept.slug} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                <Text style={[styles.tableCell, { width: '30%', fontFamily: 'Helvetica-Bold' }]}>
+                  {dept.name}
+                </Text>
+                <Text style={[styles.tableCell, { width: '12%' }]}>
+                  {staff?.teamSize ?? '—'}
+                </Text>
+                <Text style={[styles.tableCell, { width: '15%' }]}>
+                  {dept.totalPriorities}
+                </Text>
+                <Text style={[styles.tableCell, { width: '15%' }]}>
+                  {deptTime ? Math.round(deptTime.potentialHoursPerWeek) : '—'}
+                </Text>
+                <View style={{ width: '28%', justifyContent: 'center' }}>
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${dept.progressPercent}%` }]} />
+                  </View>
+                  <Text style={{ fontSize: 7, color: colors.slate600, marginTop: 2 }}>
+                    {dept.progressPercent}%
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+      </View>
+
+      {/* Top 10 opportunities */}
+      <Text style={styles.sectionSubtitle}>Top 10 Opportunities by Impact</Text>
+      <View style={styles.table}>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.tableHeaderText, { width: '5%' }]}>#</Text>
+          <Text style={[styles.tableHeaderText, { width: '30%' }]}>Opportunity</Text>
+          <Text style={[styles.tableHeaderText, { width: '20%' }]}>Department</Text>
+          <Text style={[styles.tableHeaderText, { width: '15%' }]}>Time Saved</Text>
+          <Text style={[styles.tableHeaderText, { width: '15%' }]}>Effort</Text>
+          <Text style={[styles.tableHeaderText, { width: '15%' }]}>Complexity</Text>
+        </View>
+        {topOpportunities.slice(0, 10).map((opp, i) => (
+          <View key={opp.id} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+            <Text style={[styles.tableCell, { width: '5%' }]}>{i + 1}</Text>
+            <Text style={[styles.tableCell, { width: '30%', fontFamily: 'Helvetica-Bold' }]}>
+              {opp.name}
+            </Text>
+            <Text style={[styles.tableCell, { width: '20%' }]}>{opp.departmentName}</Text>
+            <Text style={[styles.tableCell, { width: '15%', color: colors.emerald }]}>
+              {opp.estimatedTimeSavings}
+            </Text>
+            <Text style={[styles.tableCell, { width: '15%' }]}>{opp.effort}</Text>
+            <Text style={[styles.tableCell, { width: '15%' }]}>{opp.complexity}</Text>
+          </View>
+        ))}
+      </View>
+
+      <PageFooter orgName={orgName} />
+    </Page>
+  );
+}
+
+function DepartmentPage({
+  orgName,
+  dept,
+  timeSavings,
+  opportunities,
+  headcount,
+}: {
+  orgName: string;
+  dept: DepartmentSummary;
+  timeSavings: TimeSavingsRollup;
+  opportunities: RankedOpportunity[];
+  headcount: number;
+}) {
+  const deptTime = timeSavings.byDepartment.find((d) => d.slug === dept.slug);
+  const potential = deptTime ? Math.round(deptTime.potentialHoursPerWeek) : 0;
+
+  // Top 5 priorities by time savings
+  const top5 = opportunities
+    .filter((o) => o.departmentSlug === dept.slug)
+    .sort((a, b) => {
+      const aTime = a.parsedTimeSavings.valid ? a.parsedTimeSavings.midpoint : 0;
+      const bTime = b.parsedTimeSavings.valid ? b.parsedTimeSavings.midpoint : 0;
+      return bTime - aTime;
+    })
+    .slice(0, 5);
+
+  return (
+    <Page size="LETTER" style={styles.page}>
+      {/* Department header */}
+      <View style={styles.deptHeader}>
+        <View>
+          <Text style={styles.deptName}>{dept.name}</Text>
+        </View>
+        <View style={styles.deptStats}>
+          <Text style={{ fontSize: 10, color: colors.slate600 }}>
+            {headcount} team member{headcount !== 1 ? 's' : ''} · {dept.totalPriorities} priorities
+          </Text>
+        </View>
+      </View>
+
+      {/* Stat cards */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.emerald }]}>
+            {dept.progressPercent}%
+          </Text>
+          <Text style={styles.statLabel}>Readiness</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.emerald }]}>
+            {potential} hrs/wk
+          </Text>
+          <Text style={styles.statLabel}>Potential Savings</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.emerald }]}>{dept.completed}</Text>
+          <Text style={styles.statLabel}>Completed</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: colors.amber }]}>{dept.inProgress}</Text>
+          <Text style={styles.statLabel}>In Progress</Text>
+        </View>
+      </View>
+
+      {/* Progress bar */}
+      <View style={{ marginBottom: 20 }}>
+        <View style={[styles.progressBarBg, { height: 10 }]}>
+          <View style={[styles.progressBarFill, { height: 10, width: `${dept.progressPercent}%` }]} />
+        </View>
+      </View>
+
+      {/* Top 5 priorities */}
+      <Text style={styles.sectionSubtitle}>Top Priorities by Time Savings</Text>
+      {top5.map((opp, i) => (
+        <View key={opp.id} style={styles.priorityCard}>
+          <View style={styles.priorityHeader}>
+            <Text style={styles.priorityName}>
+              {i + 1}. {opp.name}
+            </Text>
+            <Text style={[styles.priorityMeta, { color: colors.emerald }]}>
+              {opp.estimatedTimeSavings}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
+            <Text style={styles.priorityMeta}>Effort: {opp.effort || '—'}</Text>
+            <Text style={styles.priorityMeta}>Complexity: {opp.complexity || '—'}</Text>
+          </View>
+          {opp.whatToAutomate ? (
+            <Text style={styles.priorityDesc}>{opp.whatToAutomate}</Text>
+          ) : null}
+        </View>
+      ))}
+
+      <PageFooter orgName={orgName} />
+    </Page>
+  );
+}
+
+export default function PdfReport({
+  orgName,
+  departments,
+  timeSavings,
+  allOpportunities,
+  staffing,
+}: PdfReportProps) {
+  const sortedDepts = [...departments].sort((a, b) => b.progressPercent - a.progressPercent);
+
+  return (
+    <Document>
+      <CoverPage orgName={orgName} />
+      <RollupPage
+        orgName={orgName}
+        departments={departments}
+        timeSavings={timeSavings}
+        topOpportunities={allOpportunities}
+        staffing={staffing}
+      />
+      {sortedDepts.map((dept) => (
+        <DepartmentPage
+          key={dept.slug}
+          orgName={orgName}
+          dept={dept}
+          timeSavings={timeSavings}
+          opportunities={allOpportunities}
+          headcount={staffing.find((s) => s.slug === dept.slug)?.teamSize ?? 0}
+        />
+      ))}
+    </Document>
+  );
+}
