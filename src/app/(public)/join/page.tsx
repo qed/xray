@@ -21,15 +21,15 @@ export default function JoinPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/login'); return; }
 
-      const { data: invite } = await supabase.from('invites').select('*, organization:organizations(*)').eq('code', inviteCode.trim().toLowerCase()).single();
+      const { data: invite } = await supabase.from('invites').select('*').eq('code', inviteCode.trim().toLowerCase()).single();
       if (!invite) { setError('Invalid invite code'); setLoading(false); return; }
       if (invite.expires_at && new Date(invite.expires_at) < new Date()) { setError('This invite code has expired'); setLoading(false); return; }
       if (invite.max_uses && invite.use_count >= invite.max_uses) { setError('This invite code has reached its maximum uses'); setLoading(false); return; }
 
-      await supabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: 'member' });
+      await supabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: invite.role ?? 'member' });
       await supabase.from('invites').update({ use_count: invite.use_count + 1 }).eq('id', invite.id);
 
-      router.push(`/org/${invite.organization.slug}/priorities`);
+      router.push('/orgs');
       router.refresh();
     } catch { setError('Failed to join organization'); setLoading(false); }
   }
