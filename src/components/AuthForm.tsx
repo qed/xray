@@ -22,16 +22,33 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
       const supabase = createClient();
 
       if (mode === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
         if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+
+        // If email confirmation is required, session will be null
+        if (!signUpData.session) {
+          setError('Check your email to confirm your account, then log in.');
+          setLoading(false);
+          return;
+        }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) { setError(signInError.message); setLoading(false); return; }
       }
 
       if (inviteCode) {
-        window.location.href = `/invite/${inviteCode}`;
-        return;
+        // Join the org directly on the client to avoid server cookie timing issues
+        const { data: invite } = await supabase.from('invites').select('*').eq('code', inviteCode.trim().toLowerCase()).single();
+        if (invite) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: existing } = await supabase.from('org_members').select('id').eq('org_id', invite.org_id).eq('user_id', user.id).single();
+            if (!existing) {
+              await supabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: invite.role ?? 'member' });
+              await supabase.from('invites').update({ use_count: invite.use_count + 1 }).eq('id', invite.id);
+            }
+          }
+        }
       }
 
       window.location.href = '/orgs';
