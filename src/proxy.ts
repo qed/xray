@@ -6,6 +6,7 @@ const publicPaths = ['/', '/login', '/signup', '/signup-success', '/join'];
 function isPublicPath(pathname: string): boolean {
   if (publicPaths.includes(pathname)) return true;
   if (pathname.startsWith('/invite/')) return true;
+  if (pathname.startsWith('/auth/')) return true;
   return false;
 }
 
