@@ -145,6 +145,39 @@ export async function POST(req: NextRequest) {
         .update({ department_id: dept.id })
         .eq('id', extraction.conversation_id);
 
+      // Create project brief snapshot
+      const prioritiesForBrief = (data.priorities || []).map((p: {
+        rank: number; name: string; whatToAutomate: string;
+        estimatedTimeSavings: string; effort: string; complexity: string;
+      }) => ({
+        rank: p.rank,
+        name: p.name,
+        whatToAutomate: p.whatToAutomate || '',
+        estimatedTimeSavings: p.estimatedTimeSavings || '',
+        effort: p.effort || '',
+        complexity: p.complexity || '',
+      }));
+
+      await admin.from('project_briefs').insert({
+        org_id: orgId,
+        department_id: dept.id,
+        title: `${profile.name} — AI Readiness Assessment`,
+        summary: profile.mission || '',
+        profile_snapshot: {
+          name: profile.name,
+          mission: profile.mission || '',
+          scope: profile.scope || '',
+          tools: profile.tools || [],
+          singlePointsOfFailure: profile.singlePointsOfFailure || [],
+          painPoints: profile.painPoints || [],
+          tribalKnowledgeRisks: profile.tribalKnowledgeRisks || [],
+        },
+        priorities_snapshot: prioritiesForBrief,
+        team_count: profile.teamMembers?.length || 0,
+        total_potential_hours_per_week: 0,
+        created_by: user.id,
+      });
+
     } else if (mode === 'gap-fill' && data.fields) {
       // Update existing priority with filled fields
       const priorityId = data.priorityId;

@@ -38,6 +38,7 @@ export default async function OrgLayout({
     { href: `${base}/risks`, label: 'Risks', roles: ['owner'] },
     { href: `${base}/dependencies`, label: 'Dependencies', roles: ['owner'] },
     { href: `${base}/tools`, label: 'Tools', roles: ['owner'] },
+    { href: `${base}/briefs`, label: 'Briefs', roles: ['owner', 'admin'] },
     { href: `${base}/review`, label: 'Review', roles: ['owner'] },
     { href: `${base}/unfiled`, label: 'Missing Gaps', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner'] },
     { href: `${base}/upload`, label: 'Upload', roles: ['owner'] },

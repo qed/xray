@@ -251,3 +251,32 @@ export interface DbMilestone {
   updated_at: string;
   notes: string;
 }
+
+export interface ProjectBrief {
+  id: string;
+  org_id: string;
+  department_id: string;
+  title: string;
+  summary: string;
+  profile_snapshot: {
+    name: string;
+    mission: string;
+    scope: string;
+    tools: string[];
+    singlePointsOfFailure: string[];
+    painPoints: string[];
+    tribalKnowledgeRisks: string[];
+  };
+  priorities_snapshot: {
+    rank: number;
+    name: string;
+    whatToAutomate: string;
+    estimatedTimeSavings: string;
+    effort: string;
+    complexity: string;
+  }[];
+  team_count: number;
+  total_potential_hours_per_week: number;
+  created_at: string;
+  created_by: string | null;
+}

@@ -6,7 +6,7 @@ import type {
   RankedOpportunity, ParsedTimeSavings, Completeness, CompanyOverview,
   DepartmentSummary, TimeSavingsRollup, ConsolidatedRisk,
   StaffingOverview, DepartmentDependency, StrategicBlocker,
-  ToolOverlap,
+  ToolOverlap, ProjectBrief,
 } from '@/lib/types';
 
 // ---------- Auth / Org Helpers ----------
@@ -511,4 +511,29 @@ export async function getToolOverlap(orgId: string): Promise<ToolOverlap[]> {
   }));
   overlaps.sort((a, b) => b.departments.length - a.departments.length);
   return overlaps;
+}
+
+// ---------- Project Briefs ----------
+
+export async function getProjectBriefs(orgId: string): Promise<ProjectBrief[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('project_briefs')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false });
+  return data ?? [];
+}
+
+export async function getProjectBriefByDepartment(orgId: string, departmentId: string): Promise<ProjectBrief | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('project_briefs')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('department_id', departmentId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  return data;
 }
