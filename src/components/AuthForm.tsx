@@ -27,8 +27,7 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
 
         // If email confirmation is required, session will be null
         if (!signUpData.session) {
-          setError('Check your email to confirm your account, then log in.');
-          setLoading(false);
+          window.location.href = '/signup-success';
           return;
         }
       } else {
