@@ -20,14 +20,23 @@ const roleBadge: Record<string, string> = {
 
 export default function OrgCard({ name, slug, role, departmentCount, priorityCount, inviteCode }: OrgCardProps) {
   const router = useRouter();
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
 
-  function handleCopy(e: React.MouseEvent) {
+  function handleCopyCode(e: React.MouseEvent) {
     e.stopPropagation();
     if (!inviteCode) return;
     navigator.clipboard.writeText(inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    setCopied('code');
+    setTimeout(() => setCopied(null), 1500);
+  }
+
+  function handleCopyLink(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!inviteCode) return;
+    const url = `${window.location.origin}/invite/${inviteCode}`;
+    navigator.clipboard.writeText(url);
+    setCopied('link');
+    setTimeout(() => setCopied(null), 1500);
   }
 
   return (
@@ -52,19 +61,32 @@ export default function OrgCard({ name, slug, role, departmentCount, priorityCou
       </div>
 
       {inviteCode && (
-        <div className="flex items-center gap-1.5 px-2.5 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-          <span className="text-[11px] text-slate-500">Invite code:</span>
-          <code className="text-sm font-semibold text-emerald-700 tracking-wide">{inviteCode}</code>
+        <div className="flex flex-col gap-1.5 px-2.5 py-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-slate-500">Invite code:</span>
+            <code className="text-sm font-semibold text-emerald-700 tracking-wide">{inviteCode}</code>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className={`ml-auto px-2.5 py-1 text-xs font-medium rounded-full border transition-all ${
+                copied === 'code'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-400 hover:text-emerald-600'
+              }`}
+            >
+              {copied === 'code' ? 'Copied!' : 'Copy Code'}
+            </button>
+          </div>
           <button
             type="button"
-            onClick={handleCopy}
-            className={`ml-auto px-2.5 py-1 text-xs font-medium rounded-full border transition-all ${
-              copied
+            onClick={handleCopyLink}
+            className={`w-full px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+              copied === 'link'
                 ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-white text-slate-500 border-slate-300 hover:border-emerald-400 hover:text-emerald-600'
+                : 'bg-white text-emerald-600 border-emerald-300 hover:bg-emerald-600 hover:text-white'
             }`}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied === 'link' ? 'Link Copied!' : 'Copy Magic Link'}
           </button>
         </div>
       )}
