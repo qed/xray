@@ -50,6 +50,20 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
         }
       }
 
+      // Redirect to first org's priorities page, or /orgs if no memberships
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const { data: memberships } = await supabase
+          .from('org_members')
+          .select('org_id, organizations(slug)')
+          .eq('user_id', currentUser.id)
+          .limit(1);
+        if (memberships?.length && memberships[0].organizations) {
+          const org = memberships[0].organizations as unknown as { slug: string };
+          window.location.href = `/org/${org.slug}/priorities`;
+          return;
+        }
+      }
       window.location.href = '/orgs';
     } catch (err) {
       setError(`Unexpected error: ${err}`);
