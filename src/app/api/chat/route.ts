@@ -3,7 +3,15 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole } from '@/lib/db';
-import { INTAKE_SYSTEM_PROMPT, GAP_FILL_SYSTEM_PROMPT } from '@/lib/prompts';
+import { INTAKE_SYSTEM_PROMPT, GAP_FILL_SYSTEM_PROMPT, NEW_PRIORITIES_SYSTEM_PROMPT } from '@/lib/prompts';
+import {
+  PHASE_TITLES,
+  PHASE_TOPICS,
+  createDetectionState,
+  detectPhaseAndTopicTags,
+  detectPhaseKeywordFallback,
+  stripPhaseTags,
+} from '@/lib/phase-config';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
@@ -183,14 +191,20 @@ export async function POST(req: NextRequest) {
   });
 
   // Build system prompt
-  const systemPrompt = mode === 'gap-fill'
-    ? `${GAP_FILL_SYSTEM_PROMPT}\n\n## CONTEXT\n${context?.summary || ''}`
-    : `${INTAKE_SYSTEM_PROMPT}\n\n## CONTEXT\n${context?.summary || ''}`;
+  let basePrompt: string;
+  if (mode === 'gap-fill') {
+    basePrompt = GAP_FILL_SYSTEM_PROMPT;
+  } else if (mode === 'new-priorities') {
+    basePrompt = NEW_PRIORITIES_SYSTEM_PROMPT;
+  } else {
+    basePrompt = INTAKE_SYSTEM_PROMPT;
+  }
+  const systemPrompt = `${basePrompt}\n\n## CONTEXT\n${context?.summary || ''}`;
 
   // Stream response from Claude
   const stream = anthropic.messages.stream({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2048,
+    model: 'claude-sonnet-4-6',
+    max_tokens: 8192,
     system: systemPrompt,
     messages,
   });
@@ -200,6 +214,7 @@ export async function POST(req: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       let fullResponse = '';
+      const detectionState = createDetectionState(context?.currentPhase);
 
       try {
         for await (const event of stream) {
@@ -207,14 +222,52 @@ export async function POST(req: NextRequest) {
             const text = event.delta.text;
             fullResponse += text;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'delta', text, conversationId: convoId })}\n\n`));
+
+            // Real-time phase and topic detection
+            const detected = detectPhaseAndTopicTags(fullResponse, detectionState);
+            for (const evt of detected) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ ...evt, conversationId: convoId })}\n\n`));
+
+              // Update conversation context with new phase number
+              if (evt.type === 'phase') {
+                admin.from('conversations')
+                  .update({ context: { ...context, currentPhase: evt.phase_number } })
+                  .eq('id', convoId)
+                  .then(() => {});
+              }
+            }
           }
         }
+
+        // Keyword fallback: if no phase tags were detected in this response
+        if (detectionState.detectedPhases.size === 0) {
+          const fallback = detectPhaseKeywordFallback(fullResponse);
+          if (fallback) {
+            console.warn(`[chat] Phase keyword fallback used for conversation ${convoId}: Phase ${fallback.phase_number}`);
+            const phaseEvt = {
+              type: 'phase' as const,
+              phase_number: fallback.phase_number,
+              phase_title: PHASE_TITLES[fallback.phase_number] || `Phase ${fallback.phase_number}`,
+              sub_progress: { current: 0, total: PHASE_TOPICS[fallback.phase_number] || 0 },
+              conversationId: convoId,
+            };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(phaseEvt)}\n\n`));
+
+            admin.from('conversations')
+              .update({ context: { ...context, currentPhase: fallback.phase_number } })
+              .eq('id', convoId)
+              .then(() => {});
+          }
+        }
+
+        // Strip phase/topic tags before saving
+        const cleanResponse = stripPhaseTags(fullResponse);
 
         // Save assistant message
         await admin.from('messages').insert({
           conversation_id: convoId,
           role: 'assistant',
-          content: fullResponse,
+          content: cleanResponse,
         });
 
         // Check if response contains an extraction
