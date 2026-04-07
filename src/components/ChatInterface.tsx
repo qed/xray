@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -168,7 +170,11 @@ export default function ChatInterface({
 
   // Strip extraction tags from displayed content
   function displayContent(content: string) {
-    return content.replace(/<extraction>[\s\S]*?<\/extraction>/g, '').trim();
+    return content
+      .replace(/<extraction>[\s\S]*?<\/extraction>/g, '')
+      .replace(/<phase>[\s\S]*?<\/phase>/g, '')
+      .replace(/<topic>[\s\S]*?<\/topic>/g, '')
+      .trim();
   }
 
   return (
@@ -194,24 +200,22 @@ export default function ChatInterface({
             key={i}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-100 text-slate-900'
-              }`}
-            >
-              {msg.role === 'assistant' ? (
-                <>
-                  {displayContent(msg.content)}
-                  {streaming && i === messages.length - 1 && (
-                    <span className="inline-block w-1.5 h-4 bg-slate-400 animate-pulse ml-0.5 align-middle" />
-                  )}
-                </>
-              ) : (
-                msg.content
-              )}
-            </div>
+            {msg.role === 'user' ? (
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap bg-emerald-600 text-white">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-slate-100 text-slate-900 prose prose-sm prose-slate max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:bg-slate-200 prose-pre:text-slate-800 prose-code:text-emerald-700 prose-code:before:content-none prose-code:after:content-none prose-table:my-2">
+                <div className="overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-200 [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-1.5 [&_td]:text-xs [&_tr:nth-child(even)]:bg-slate-50">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {displayContent(msg.content)}
+                  </ReactMarkdown>
+                </div>
+                {streaming && i === messages.length - 1 && (
+                  <span className="inline-block w-1.5 h-4 bg-slate-400 animate-pulse ml-0.5 align-middle" />
+                )}
+              </div>
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
