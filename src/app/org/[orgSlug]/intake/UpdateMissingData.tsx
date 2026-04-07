@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { PHASE8_FIELDS } from '@/lib/db';
+// Inlined to avoid importing db.ts (which pulls in server-only next/headers)
+const PHASE8_FIELDS = [
+  'frequency', 'hands_on_time', 'waiting_overhead',
+  'hidden_costs', 'automation_percentage', 'employees_affected',
+] as const;
 import { buildGapFillContext } from '@/lib/prompts';
 import ChatInterface from '@/components/ChatInterface';
 
