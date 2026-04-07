@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { computeScore, MILESTONE_STAGES } from '@/lib/constants';
 import type {
   DbDepartment, DbPriority, DbMilestone,
@@ -559,4 +560,75 @@ export async function getProjectBriefByDepartment(orgId: string, departmentId: s
     .limit(1)
     .single();
   return data;
+}
+
+// ---------- Intake Metrics ----------
+
+/** Returns percentage of intake conversations that reached 'extracted' status */
+export async function getXRayCompletionRate(orgId: string): Promise<number> {
+  const admin = createAdminClient();
+  const { data: allConversations } = await admin
+    .from('conversations')
+    .select('id, status')
+    .eq('org_id', orgId)
+    .eq('mode', 'intake');
+
+  const convos = allConversations ?? [];
+  if (convos.length === 0) return 0;
+
+  const completed = convos.filter((c) => c.status === 'extracted').length;
+  return Math.round((completed / convos.length) * 100);
+}
+
+/** Returns average minutes from started_at to completed_at for completed X-Rays */
+export async function getAverageTimeToComplete(orgId: string): Promise<number> {
+  const admin = createAdminClient();
+  const { data: conversations } = await admin
+    .from('conversations')
+    .select('context')
+    .eq('org_id', orgId)
+    .eq('mode', 'intake')
+    .eq('status', 'extracted');
+
+  const convos = conversations ?? [];
+  const durations: number[] = [];
+
+  for (const c of convos) {
+    const ctx = c.context as Record<string, unknown> | null;
+    if (!ctx?.started_at || !ctx?.completed_at) continue;
+
+    const start = new Date(ctx.started_at as string).getTime();
+    const end = new Date(ctx.completed_at as string).getTime();
+    if (!isNaN(start) && !isNaN(end) && end > start) {
+      durations.push((end - start) / 60000); // convert ms to minutes
+    }
+  }
+
+  if (durations.length === 0) return 0;
+  return Math.round(durations.reduce((sum, d) => sum + d, 0) / durations.length);
+}
+
+/** Returns percentage of priorities that have ALL Phase 8 fields filled */
+export async function getEstimateFillRate(orgId: string): Promise<number> {
+  const allPriorities = await getAllPrioritiesForOrg(orgId);
+  if (allPriorities.length === 0) return 0;
+
+  const fullyFilled = allPriorities.filter((p) => {
+    const record = p as unknown as Record<string, unknown>;
+    return PHASE8_FIELDS.every((f) => {
+      const v = record[f];
+      return typeof v === 'string' && v.trim() !== '';
+    });
+  }).length;
+
+  return Math.round((fullyFilled / allPriorities.length) * 100);
+}
+
+/** Returns average number of priorities per department */
+export async function getAveragePriorityCount(orgId: string): Promise<number> {
+  const departments = await getDepartments(orgId);
+  if (departments.length === 0) return 0;
+
+  const allPriorities = await getAllPrioritiesForOrg(orgId);
+  return Math.round((allPriorities.length / departments.length) * 10) / 10;
 }

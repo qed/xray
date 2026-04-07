@@ -165,6 +165,21 @@ export async function POST(req: NextRequest) {
     content: messageContent,
   });
 
+  // Track started_at timestamp on first user message
+  const { data: existingConvo } = await admin
+    .from('conversations')
+    .select('context')
+    .eq('id', convoId)
+    .single();
+
+  const convoContext = (existingConvo?.context as Record<string, unknown>) || {};
+  if (!convoContext.started_at) {
+    await admin
+      .from('conversations')
+      .update({ context: { ...convoContext, started_at: new Date().toISOString() } })
+      .eq('id', convoId);
+  }
+
   // Load conversation history
   const { data: history } = await admin
     .from('messages')
@@ -279,7 +294,18 @@ export async function POST(req: NextRequest) {
               conversation_id: convoId,
               extracted_data: extractedData,
             });
-            await admin.from('conversations').update({ status: 'extracted' }).eq('id', convoId);
+
+            // Track completed_at timestamp on extraction
+            const { data: currentConvo } = await admin
+              .from('conversations')
+              .select('context')
+              .eq('id', convoId)
+              .single();
+            const currentContext = (currentConvo?.context as Record<string, unknown>) || {};
+            await admin.from('conversations').update({
+              status: 'extracted',
+              context: { ...currentContext, completed_at: new Date().toISOString() },
+            }).eq('id', convoId);
 
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'extraction', data: extractedData })}\n\n`));
           } catch {
