@@ -32,7 +32,7 @@ export default async function OrgLayout({
 
   const allNavLinks = [
     { href: `${base}/team`, label: 'My Team', roles: ['member'] },
-    { href: `${base}/intake`, label: 'Intake', roles: ['owner', 'member'] },
+    { href: `${base}/intake`, label: 'Intake', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner', 'admin', 'member'] },
     { href: `${base}/priorities`, label: 'AI Priorities', roles: ['owner', 'admin'] },
     { href: `${base}/dashboard`, label: 'Dashboard', roles: ['owner', 'admin'] },
     { href: `${base}/tracker`, label: 'Tracker', roles: ['owner'] },
@@ -40,8 +40,6 @@ export default async function OrgLayout({
     { href: `${base}/dependencies`, label: 'Dependencies', roles: ['owner'] },
     { href: `${base}/tools`, label: 'Tools', roles: ['owner'] },
     { href: `${base}/briefs`, label: 'Briefs', roles: ['owner', 'admin'] },
-    { href: `${base}/review`, label: 'Review', roles: ['owner'] },
-    { href: `${base}/unfiled`, label: 'Missing Gaps', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner'] },
     { href: `${base}/upload`, label: 'Upload', roles: ['owner'] },
   ];
 
