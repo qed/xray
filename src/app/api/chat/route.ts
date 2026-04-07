@@ -4,6 +4,102 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole } from '@/lib/db';
 import { INTAKE_SYSTEM_PROMPT, GAP_FILL_SYSTEM_PROMPT } from '@/lib/prompts';
+import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
+
+interface Attachment {
+  storagePath: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif'];
+const DOCUMENT_TYPES = ['application/pdf'];
+const TEXT_TYPES = ['text/plain', 'text/markdown', 'text/csv'];
+
+async function buildAttachmentBlocks(
+  attachments: Attachment[],
+  admin: ReturnType<typeof createAdminClient>
+): Promise<Anthropic.Messages.ContentBlockParam[]> {
+  const blocks: Anthropic.Messages.ContentBlockParam[] = [];
+
+  for (const att of attachments) {
+    const { data: fileData, error } = await admin.storage
+      .from('chat-attachments')
+      .download(att.storagePath);
+
+    if (error || !fileData) continue;
+
+    const buffer = Buffer.from(await fileData.arrayBuffer());
+
+    if (IMAGE_TYPES.includes(att.fileType)) {
+      const mediaType = att.fileType as 'image/png' | 'image/jpeg' | 'image/gif';
+      blocks.push({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: mediaType,
+          data: buffer.toString('base64'),
+        },
+      });
+    } else if (DOCUMENT_TYPES.includes(att.fileType)) {
+      blocks.push({
+        type: 'document',
+        source: {
+          type: 'base64',
+          media_type: 'application/pdf',
+          data: buffer.toString('base64'),
+        },
+      } as Anthropic.Messages.ContentBlockParam);
+    } else if (TEXT_TYPES.includes(att.fileType)) {
+      const text = buffer.toString('utf-8');
+      blocks.push({
+        type: 'text',
+        text: `[Attached file: ${att.fileName}]\n\n${text}`,
+      });
+    } else if (
+      att.fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      att.fileName.endsWith('.docx')
+    ) {
+      try {
+        const result = await mammoth.extractRawText({ buffer });
+        blocks.push({
+          type: 'text',
+          text: `[Attached file: ${att.fileName}]\n\n${result.value}`,
+        });
+      } catch {
+        blocks.push({
+          type: 'text',
+          text: `[Attached file: ${att.fileName} — could not extract text]`,
+        });
+      }
+    } else if (
+      att.fileType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      att.fileName.endsWith('.xlsx')
+    ) {
+      try {
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const csvParts: string[] = [];
+        for (const sheetName of workbook.SheetNames) {
+          const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+          csvParts.push(`## Sheet: ${sheetName}\n${csv}`);
+        }
+        blocks.push({
+          type: 'text',
+          text: `[Attached file: ${att.fileName}]\n\n${csvParts.join('\n\n')}`,
+        });
+      } catch {
+        blocks.push({
+          type: 'text',
+          text: `[Attached file: ${att.fileName} — could not extract data]`,
+        });
+      }
+    }
+  }
+
+  return blocks;
+}
 
 const anthropic = new Anthropic();
 
@@ -14,7 +110,7 @@ export async function POST(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const { conversationId, message, mode, context, orgId } = await req.json();
+  const { conversationId, message, mode, context, orgId, attachments } = await req.json();
 
   // Verify user belongs to this org
   const role = await getUserRole(orgId, user.id);
@@ -44,11 +140,21 @@ export async function POST(req: NextRequest) {
     convoId = convo.id;
   }
 
-  // Save user message
+  // Build attachment content blocks if present
+  let attachmentBlocks: Anthropic.Messages.ContentBlockParam[] = [];
+  if (attachments && attachments.length > 0) {
+    attachmentBlocks = await buildAttachmentBlocks(attachments, admin);
+  }
+
+  // Save user message (store attachment metadata alongside content)
+  const messageContent = attachments?.length
+    ? `${message}\n\n[Attachments: ${attachments.map((a: Attachment) => a.fileName).join(', ')}]`
+    : message;
+
   await admin.from('messages').insert({
     conversation_id: convoId,
     role: 'user',
-    content: message,
+    content: messageContent,
   });
 
   // Load conversation history
@@ -58,10 +164,23 @@ export async function POST(req: NextRequest) {
     .eq('conversation_id', convoId)
     .order('created_at', { ascending: true });
 
-  const messages = (history || []).map((m) => ({
-    role: m.role as 'user' | 'assistant',
-    content: m.content,
-  }));
+  const messages: Anthropic.Messages.MessageParam[] = (history || []).map((m, idx) => {
+    const isLastUserMessage = m.role === 'user' && idx === (history || []).length - 1;
+    // Only attach files to the last user message (current one)
+    if (isLastUserMessage && attachmentBlocks.length > 0) {
+      return {
+        role: m.role as 'user' | 'assistant',
+        content: [
+          ...attachmentBlocks,
+          { type: 'text' as const, text: message },
+        ],
+      };
+    }
+    return {
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    };
+  });
 
   // Build system prompt
   const systemPrompt = mode === 'gap-fill'
