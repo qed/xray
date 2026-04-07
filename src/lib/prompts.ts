@@ -436,6 +436,7 @@ Then ask focused questions to fill each missing field. Don't ask about fields th
 
 For each missing field, ask targeted questions:
 
+### Standard Fields
 - **whatToAutomate**: "Can you walk me through exactly what would change if this were automated? What manual steps go away?"
 - **currentState**: "How does this process work today, step by step? Who does what?"
 - **whyItMatters**: "What's the business impact? What happens when this goes wrong or falls behind?"
@@ -445,6 +446,20 @@ For each missing field, ask targeted questions:
 - **dependencies**: "What needs to happen first before this can be automated? Any other teams or tools involved?"
 - **suggestedApproach**: "If we were going to build this, what would the approach look like? Any tools or integrations that make sense?"
 - **successCriteria**: "How would you know this automation is working? What metrics or outcomes would you check?"
+
+### Phase 8 Time-Savings Fields
+When these fields are missing, ask focused time-savings questions — these are the validated numbers from the Phase 8 deep-dive:
+- **frequency**: "How many times per week (or month) does this happen? Is it consistent, or does it spike at certain times?"
+- **handsOnTime**: "Each time this happens, how long does the actual work take — hands on keyboard? What takes the most time within this task?"
+- **waitingOverhead**: "How much time is spent waiting — on approvals, other people, data from another system? How much time fixing errors?"
+- **hiddenCosts**: "Does this being slow or broken cost anyone ELSE time? Other team members, other departments, customers? Are there meetings or follow-ups that exist only because this process doesn't work well?"
+- **automationPercentage**: "If we automated this, could it be fully automated, or would a human still review/approve? What percentage could realistically be handled by AI? Be conservative."
+- **employeesAffected**: "How many people on your team are involved in or affected by this process?"
+
+Push hard on vague time-savings answers:
+- "A few hours" -> "Is it 2 hours or 5 hours? Big difference when we multiply by frequency."
+- "It depends" -> "What's the typical case? And the worst case?"
+- "Not that long" -> "Walk me through what you did last time. How long did each step take?"
 
 ## CONVERSATION STYLE
 - Be concise and focused. This isn't a full intake, it's gap-filling.
@@ -467,7 +482,13 @@ Once all gaps are filled, output the completed fields in this exact JSON format,
     "complexity": "Low|Medium|Medium-High|High",
     "dependencies": ["..."],
     "suggested_approach": "...",
-    "success_criteria": "..."
+    "success_criteria": "...",
+    "frequency": "e.g., 15 times/week",
+    "hands_on_time": "e.g., 45 min per occurrence",
+    "waiting_overhead": "e.g., 20 min waiting/errors per occurrence",
+    "hidden_costs": "e.g., causes 2 hrs/week of downstream work for other teams",
+    "automation_percentage": "e.g., 80%",
+    "employees_affected": "e.g., 3"
   }
 }
 </extraction>
@@ -577,16 +598,35 @@ export function buildGapFillContext(
     dependencies: 'dependencies and prerequisites',
     suggested_approach: 'suggested implementation approach',
     success_criteria: 'success criteria',
+    frequency: 'how often this occurs',
+    hands_on_time: 'hands-on time per occurrence',
+    waiting_overhead: 'waiting/overhead time per occurrence',
+    hidden_costs: 'hidden downstream costs to other people/departments',
+    automation_percentage: 'realistic automation percentage',
+    employees_affected: 'number of employees affected',
   };
 
-  const missingLabels = missingFields
-    .map((f) => fieldLabels[f] || f)
-    .join(', ');
+  const PHASE8_FIELD_NAMES = [
+    'frequency', 'hands_on_time', 'waiting_overhead',
+    'hidden_costs', 'automation_percentage', 'employees_affected',
+  ];
+
+  const missingStandard = missingFields.filter((f) => !PHASE8_FIELD_NAMES.includes(f));
+  const missingPhase8 = missingFields.filter((f) => PHASE8_FIELD_NAMES.includes(f));
 
   const existingStr = Object.entries(existingData)
     .filter(([, v]) => v && v.trim())
     .map(([k, v]) => `- ${fieldLabels[k] || k}: ${v}`)
     .join('\n');
+
+  let missingSection = '';
+  if (missingStandard.length > 0) {
+    missingSection += `\nMissing STANDARD fields: ${missingStandard.map((f) => fieldLabels[f] || f).join(', ')}`;
+  }
+  if (missingPhase8.length > 0) {
+    missingSection += `\nMissing PHASE 8 TIME-SAVINGS fields: ${missingPhase8.map((f) => fieldLabels[f] || f).join(', ')}`;
+    missingSection += `\n(Phase 8 fields require validated time-savings numbers — push for specifics, not vague estimates.)`;
+  }
 
   return `Department: ${departmentName}
 Priority: ${priorityName}
@@ -594,6 +634,5 @@ Priority ID: ${priorityId}
 
 What we already know:
 ${existingStr || '(nothing yet)'}
-
-Missing fields that need to be captured: ${missingLabels}`;
+${missingSection}`;
 }
