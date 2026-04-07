@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import IntakeSidebar, { type IntakeFeature } from './IntakeSidebar';
 import UpdateMissingData from './UpdateMissingData';
 import XRayInterview from './XRayInterview';
+import AddNewPriorities from './AddNewPriorities';
 
 interface Department {
   id: string;
@@ -62,6 +63,13 @@ export default function IntakePageClient({ departments, orgSlug, orgId }: Intake
           /* X-Ray interview takes over the full content area */
           <XRayInterview
             departmentId={selectedDeptId}
+            orgId={orgId}
+            orgSlug={orgSlug}
+          />
+        ) : activeFeature === 'new-priorities' && selectedDept ? (
+          /* Add New Priorities chat takes over the full content area */
+          <AddNewPriorities
+            departmentId={selectedDept.id}
             orgId={orgId}
             orgSlug={orgSlug}
           />
