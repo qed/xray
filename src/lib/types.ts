@@ -104,8 +104,8 @@ export type ParsedTimeSavings =
   | { valid: false; rawText: string; issue: string };
 
 export interface Completeness {
-  score: number;   // 0-9
-  total: number;   // always 9
+  score: number;   // 0-9 (or 0-15 when Phase 8 fields present)
+  total: number;   // 9 standard, or 15 when Phase 8 fields are present
   missing: string[]; // DB column names that are empty
 }
 
@@ -242,6 +242,16 @@ export interface DbPriority {
   success_criteria: string;
   dependencies: string[];
   status: string;
+  // Phase 8 fields (value dimensions)
+  frequency?: string;
+  hands_on_time?: string;
+  waiting_overhead?: string;
+  hidden_costs?: string;
+  automation_percentage?: string;
+  employees_affected?: string;
+  // Informational value dimensions (not scored)
+  revenue_opportunity?: string;
+  growth_potential?: string;
 }
 
 export interface DbMilestone {

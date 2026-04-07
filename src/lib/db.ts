@@ -266,9 +266,16 @@ const REQUIRED_PRIORITY_FIELDS = [
   'suggested_approach', 'success_criteria', 'dependencies',
 ] as const;
 
+export const PHASE8_FIELDS = [
+  'frequency', 'hands_on_time', 'waiting_overhead',
+  'hidden_costs', 'automation_percentage', 'employees_affected',
+] as const;
+
 export function getCompletenessScore(p: Record<string, unknown> | DbPriority): Completeness {
   const record = p as Record<string, unknown>;
   const missing: string[] = [];
+
+  // Standard fields
   for (const field of REQUIRED_PRIORITY_FIELDS) {
     const value = record[field];
     if (Array.isArray(value) ? value.length === 0 : !value) {
@@ -280,7 +287,23 @@ export function getCompletenessScore(p: Record<string, unknown> | DbPriority): C
       }
     }
   }
-  const total = REQUIRED_PRIORITY_FIELDS.length;
+
+  // Phase 8: only include when ANY Phase 8 field is filled
+  const hasAnyPhase8 = PHASE8_FIELDS.some((f) => {
+    const v = record[f];
+    return typeof v === 'string' && v.trim() !== '';
+  });
+
+  if (hasAnyPhase8) {
+    for (const field of PHASE8_FIELDS) {
+      const value = record[field];
+      if (typeof value !== 'string' || value.trim() === '') {
+        missing.push(field);
+      }
+    }
+  }
+
+  const total = REQUIRED_PRIORITY_FIELDS.length + (hasAnyPhase8 ? PHASE8_FIELDS.length : 0);
   return { score: total - missing.length, total, missing };
 }
 
