@@ -335,11 +335,8 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
           onPhaseChange={handlePhaseChange}
           onTopicChange={handleTopicChange}
           onFirstAssistantMessage={handleFirstAssistantMessage}
-          greeting={
-            departmentId
-              ? 'Let\'s continue mapping out your department. Pick up where you left off or provide any new details.'
-              : 'Let\'s get to know your department. I\'ll walk you through 8 phases covering everything from team structure to automation priorities.'
-          }
+          greeting="Ready to start your Department X-Ray — a structured deep-dive covering team structure, workflows, tools, pain points, and automation priorities."
+          autoSendMessage={!existingMessages?.length ? 'Start the department X-Ray interview.' : undefined}
         />
       </div>
 

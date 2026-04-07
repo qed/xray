@@ -64,6 +64,7 @@ interface ChatInterfaceProps {
   onTopicChange?: (phase: number, subProgress: { current: number; total: number }) => void;
   onFirstAssistantMessage?: () => void;
   greeting?: string;
+  autoSendMessage?: string;
 }
 
 export default function ChatInterface({
@@ -77,6 +78,7 @@ export default function ChatInterface({
   onTopicChange,
   onFirstAssistantMessage,
   greeting,
+  autoSendMessage,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(existingMessages || []);
   const [input, setInput] = useState('');
@@ -89,6 +91,8 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const firstAssistantFired = useRef(false);
+  const autoSendFired = useRef(false);
+
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -261,6 +265,15 @@ export default function ChatInterface({
     setStreaming(false);
     inputRef.current?.focus();
   }
+
+  // Auto-send an initial message on mount (e.g., to trigger Claude's opening question)
+  useEffect(() => {
+    if (autoSendMessage && !autoSendFired.current && !existingMessages?.length) {
+      autoSendFired.current = true;
+      sendMessage(autoSendMessage);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {
