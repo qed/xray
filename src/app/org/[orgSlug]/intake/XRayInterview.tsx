@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PhaseProgressBar from '@/components/PhaseProgressBar';
 import ChatInterface from '@/components/ChatInterface';
+import OverwriteDialog from '@/components/OverwriteDialog';
 import { PHASE_TOPICS } from '@/lib/phase-config';
 import { createClient } from '@/lib/supabase/client';
 
@@ -36,6 +37,14 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
   const [isResuming, setIsResuming] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedDepartmentId, setSavedDepartmentId] = useState<string | null>(null);
+  const [overwriteDialog, setOverwriteDialog] = useState<{
+    departmentName: string;
+    extractedData: Record<string, unknown>;
+    conversationId: string;
+  } | null>(null);
   const resumeHandled = useRef(false);
 
   // Load existing conversation on mount
@@ -126,14 +135,103 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
     [],
   );
 
-  // Handle extraction completion
-  const handleExtraction = useCallback(
-    (data: unknown, convId: string) => {
-      setIsComplete(true);
-      // Future: parent will show OverwriteDialog
-      console.log('Extraction received:', { data, convId });
+  // ── Completion helpers ──────────────────────────────────────────────
+
+  /** Call the /api/intake/complete endpoint */
+  const callComplete = useCallback(
+    async (
+      payload: Record<string, unknown>,
+    ): Promise<{ success?: boolean; exists?: boolean; departmentId?: string; error?: string }> => {
+      const res = await fetch('/api/intake/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return res.json();
     },
     [],
+  );
+
+  /** Persist extraction data with the given mode */
+  const saveExtraction = useCallback(
+    async (
+      extractedData: Record<string, unknown>,
+      convId: string,
+      mode: 'create' | 'overwrite',
+    ) => {
+      setSaving(true);
+      setSaveError(null);
+      try {
+        const deptName =
+          (extractedData.profile as Record<string, unknown> | undefined)?.name as string | undefined;
+        const result = await callComplete({
+          orgId,
+          extractedData,
+          conversationId: convId,
+          departmentName: deptName ?? 'Unknown',
+          mode,
+        });
+
+        if (result.success && result.departmentId) {
+          setSavedDepartmentId(result.departmentId);
+          setIsComplete(true);
+        } else {
+          setSaveError(result.error ?? 'Unknown error while saving.');
+        }
+      } catch (err) {
+        setSaveError(String(err));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [callComplete, orgId],
+  );
+
+  // Handle extraction completion
+  const handleExtraction = useCallback(
+    async (data: unknown, convId: string) => {
+      const extractedData = data as Record<string, unknown>;
+      const deptName =
+        (extractedData.profile as Record<string, unknown> | undefined)?.name as string | undefined;
+
+      if (!deptName) {
+        // No department name — just create directly
+        await saveExtraction(extractedData, convId, 'create');
+        return;
+      }
+
+      // Check if department already exists
+      try {
+        const check = await callComplete({
+          orgId,
+          departmentName: deptName,
+        });
+
+        if (check.exists) {
+          // Show overwrite dialog
+          setOverwriteDialog({
+            departmentName: deptName,
+            extractedData,
+            conversationId: convId,
+          });
+        } else {
+          // No conflict — create directly
+          await saveExtraction(extractedData, convId, 'create');
+        }
+      } catch (err) {
+        setSaveError(String(err));
+      }
+    },
+    [callComplete, orgId, saveExtraction],
+  );
+
+  /** Check if a department name exists (used by OverwriteDialog rename validation) */
+  const checkDeptExists = useCallback(
+    async (name: string): Promise<boolean> => {
+      const result = await callComplete({ orgId, departmentName: name });
+      return !!result.exists;
+    },
+    [callComplete, orgId],
   );
 
   // Clear resuming state when first assistant message arrives
@@ -187,6 +285,39 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
         </div>
       )}
 
+      {/* Saving indicator */}
+      {saving && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border-b border-blue-100 text-blue-700">
+          <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          <span className="text-sm font-medium">Saving department data...</span>
+        </div>
+      )}
+
+      {/* Error banner with retry */}
+      {saveError && (
+        <div className="flex items-center justify-between px-4 py-3 bg-red-50 border-b border-red-100 text-red-700">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm font-medium">Save failed: {saveError}</span>
+          </div>
+          <button
+            onClick={() => setSaveError(null)}
+            className="text-sm font-medium text-red-800 underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Completion banner */}
       {isComplete && (
         <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border-b border-emerald-100 text-emerald-700">
@@ -194,7 +325,15 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span className="text-sm font-medium">
-            Interview complete! Data has been extracted.
+            Interview complete! Data has been saved.{' '}
+            {savedDepartmentId && (
+              <a
+                href={`/org/${orgSlug}/departments/${savedDepartmentId}`}
+                className="underline hover:no-underline"
+              >
+                View department
+              </a>
+            )}
           </span>
         </div>
       )}
@@ -217,6 +356,32 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
           }
         />
       </div>
+
+      {/* Overwrite / rename dialog */}
+      {overwriteDialog && (
+        <OverwriteDialog
+          departmentName={overwriteDialog.departmentName}
+          checkExists={checkDeptExists}
+          onOverwrite={async () => {
+            setOverwriteDialog(null);
+            await saveExtraction(
+              overwriteDialog.extractedData,
+              overwriteDialog.conversationId,
+              'overwrite',
+            );
+          }}
+          onRename={async (newName: string) => {
+            setOverwriteDialog(null);
+            // Patch the department name in extracted data
+            const patched = { ...overwriteDialog.extractedData };
+            if (patched.profile && typeof patched.profile === 'object') {
+              patched.profile = { ...(patched.profile as Record<string, unknown>), name: newName };
+            }
+            await saveExtraction(patched, overwriteDialog.conversationId, 'create');
+          }}
+          onCancel={() => setOverwriteDialog(null)}
+        />
+      )}
     </div>
   );
 }
