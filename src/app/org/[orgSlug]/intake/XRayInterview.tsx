@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import PhaseProgressBar from '@/components/PhaseProgressBar';
 import ChatInterface from '@/components/ChatInterface';
 import OverwriteDialog from '@/components/OverwriteDialog';
+import CompletionScreen from './CompletionScreen';
 import { PHASE_TOPICS } from '@/lib/phase-config';
 import { createClient } from '@/lib/supabase/client';
 
@@ -260,6 +261,11 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
     );
   }
 
+  // ── Show CompletionScreen when interview is done and data is saved ──
+  if (isComplete && savedDepartmentId) {
+    return <CompletionScreen departmentId={savedDepartmentId} orgSlug={orgSlug} />;
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Phase progress bar docked at top */}
@@ -315,26 +321,6 @@ export default function XRayInterview({ departmentId, orgId, orgSlug }: XRayInte
           >
             Dismiss
           </button>
-        </div>
-      )}
-
-      {/* Completion banner */}
-      {isComplete && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border-b border-emerald-100 text-emerald-700">
-          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-sm font-medium">
-            Interview complete! Data has been saved.{' '}
-            {savedDepartmentId && (
-              <a
-                href={`/org/${orgSlug}/departments/${savedDepartmentId}`}
-                className="underline hover:no-underline"
-              >
-                View department
-              </a>
-            )}
-          </span>
         </div>
       )}
 
