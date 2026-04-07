@@ -55,11 +55,14 @@ interface Extraction {
 
 interface ChatInterfaceProps {
   orgId: string;
-  mode: 'intake' | 'gap-fill';
+  mode: 'intake' | 'gap-fill' | 'new-priorities';
   context?: { summary: string };
   existingConversationId?: string;
   existingMessages?: Message[];
   onExtraction?: (data: Extraction, conversationId: string) => void;
+  onPhaseChange?: (phase: number, subProgress: { current: number; total: number }) => void;
+  onTopicChange?: (phase: number, subProgress: { current: number; total: number }) => void;
+  onFirstAssistantMessage?: () => void;
   greeting?: string;
 }
 
@@ -70,6 +73,9 @@ export default function ChatInterface({
   existingConversationId,
   existingMessages,
   onExtraction,
+  onPhaseChange,
+  onTopicChange,
+  onFirstAssistantMessage,
   greeting,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(existingMessages || []);
@@ -82,6 +88,7 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const firstAssistantFired = useRef(false);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -217,6 +224,11 @@ export default function ChatInterface({
                 if (data.conversationId && !conversationId) {
                   setConversationId(data.conversationId);
                 }
+                // Fire first-assistant-message callback once
+                if (!firstAssistantFired.current && onFirstAssistantMessage) {
+                  firstAssistantFired.current = true;
+                  onFirstAssistantMessage();
+                }
                 setMessages((prev) => {
                   const updated = [...prev];
                   updated[updated.length - 1] = { role: 'assistant', content: assistantContent };
@@ -224,6 +236,10 @@ export default function ChatInterface({
                 });
               } else if (data.type === 'extraction') {
                 onExtraction?.(data.data, data.conversationId || conversationId || '');
+              } else if (data.type === 'phase') {
+                onPhaseChange?.(data.phase_number, data.sub_progress);
+              } else if (data.type === 'topic') {
+                onTopicChange?.(data.phase_number, data.sub_progress);
               }
             } catch {
               // skip malformed SSE lines
