@@ -2,11 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
 const publicPaths = ['/', '/login', '/signup', '/signup-success', '/join'];
+const publicPrefixes = ['/invite/', '/auth/', '/wevend', '/csuite'];
 
 function isPublicPath(pathname: string): boolean {
   if (publicPaths.includes(pathname)) return true;
-  if (pathname.startsWith('/invite/')) return true;
-  if (pathname.startsWith('/auth/')) return true;
+  if (publicPrefixes.some(prefix => pathname.startsWith(prefix))) return true;
   return false;
 }
 
@@ -82,6 +82,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.css|.*\\.js).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.css|.*\\.js|.*\\.html).*)',
   ],
 };

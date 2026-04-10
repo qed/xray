@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSuite — Acme Corp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="nav-inner">
+            <a href="#/" class="nav-brand">CSuite</a>
+            <span class="nav-subtitle">Acme Corp</span>
+        </div>
+    </nav>
+
+    <main id="app" class="container">
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            CSuite &middot; AI Priority Dashboard &middot; 2026
+        </div>
+    </footer>
+
+    <script src="chart.umd.min.js"></script>
+    <script src="data.js"></script>
+    <script>
+    // --- Utilities ---
+
+    function escapeHTML(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function findDepartment(slug) {
+        return CSUITE_DATA.departments.find(function(d) { return d.slug === slug; });
+    }
+
+    function findPriority(dept, slug) {
+        if (!dept || !dept.priorities) return null;
+        return dept.priorities.find(function(p) { return p.slug === slug; });
+    }
+
+    function badgeClass(status) {
+        return 'badge-' + status.toLowerCase().replace(/ /g, '-');
+    }
+
+    function impactClass(impact) {
+        return 'meta-impact-' + impact.toLowerCase().replace(/ /g, '-');
+    }
+
+    // --- Chart Lifecycle ---
+
+    var activeCharts = [];
+
+    function destroyCharts() {
+        for (var i = 0; i < activeCharts.length; i++) {
+            activeCharts[i].destroy();
+        }
+        activeCharts = [];
+    }
+
+    // --- Chart Renderer ---
+
+    var FALLBACK_COLORS = { primary: "#555", secondary: "#888", tertiary: "#aaa", light: "rgba(85,85,85,0.1)", border: "#555" };
+
+    function getDeptColors(deptSlug) {
+        var c = DEPARTMENT_COLORS[deptSlug];
+        if (!c) {
+            console.warn('Missing DEPARTMENT_COLORS for slug: ' + deptSlug);
+            return FALLBACK_COLORS;
+        }
+        return c;
+    }
+
+    function buildCommonOpts() {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: { maxTicksLimit: 10, font: { size: 11 } },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { size: 11 } },
+                    grid: { color: '#f0f0f0' }
+                }
+            },
+            elements: {
+                line: { tension: 0.3, borderWidth: 2 },
+                point: { radius: 3, hoverRadius: 5 }
+            }
+        };
+    }
+
+    function createChart(chartDef, colors) {
+        var canvas = document.getElementById(chartDef.id);
+        if (!canvas) return null;
+
+        var palette = [colors.primary, colors.secondary, colors.tertiary];
+        var config;
+
+        if (chartDef.type === 'line') {
+            config = {
+                type: 'line',
+                data: {
+                    labels: chartDef.data.labels,
+                    datasets: [{
+                        label: chartDef.data.datasets[0].label || '',
+                        data: chartDef.data.datasets[0].data,
+                        borderColor: colors.primary,
+                        backgroundColor: colors.light,
+                        fill: true
+                    }]
+                },
+                options: buildCommonOpts()
+            };
+        } else if (chartDef.type === 'bar') {
+            config = {
+                type: 'bar',
+                data: {
+                    labels: chartDef.data.labels,
+                    datasets: [{
+                        label: chartDef.data.datasets[0].label || '',
+                        data: chartDef.data.datasets[0].data,
+                        backgroundColor: colors.secondary,
+                        borderRadius: 3
+                    }]
+                },
+                options: buildCommonOpts()
+            };
+        } else if (chartDef.type === 'doughnut') {
+            var segColors = [];
+            for (var s = 0; s < chartDef.data.datasets[0].data.length; s++) {
+                segColors.push(palette[s % palette.length]);
+            }
+            config = {
+                type: 'doughnut',
+                data: {
+                    labels: chartDef.data.labels,
+                    datasets: [{
+                        data: chartDef.data.datasets[0].data,
+                        backgroundColor: segColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { font: { size: 11 } } }
+                    }
+                }
+            };
+        } else if (chartDef.type === 'stacked-bar') {
+            var datasets = [];
+            for (var d = 0; d < chartDef.data.datasets.length; d++) {
+                datasets.push({
+                    label: chartDef.data.datasets[d].label || '',
+                    data: chartDef.data.datasets[d].data,
+                    backgroundColor: palette[d % palette.length]
+                });
+            }
+            var opts = buildCommonOpts();
+            opts.scales.x.stacked = true;
+            opts.scales.y.stacked = true;
+            opts.plugins.legend = { display: true, position: 'bottom', labels: { font: { size: 11 } } };
+            config = { type: 'bar', data: { labels: chartDef.data.labels, datasets: datasets }, options: opts };
+        } else if (chartDef.type === 'horizontal-bar') {
+            var opts2 = buildCommonOpts();
+            opts2.indexAxis = 'y';
+            config = {
+                type: 'bar',
+                data: {
+                    labels: chartDef.data.labels,
+                    datasets: [{
+                        label: chartDef.data.datasets[0].label || '',
+                        data: chartDef.data.datasets[0].data,
+                        backgroundColor: colors.secondary,
+                        borderRadius: 3
+                    }]
+                },
+                options: opts2
+            };
+        } else if (chartDef.type === 'multi-line') {
+            var mlDatasets = [];
+            for (var m = 0; m < chartDef.data.datasets.length; m++) {
+                mlDatasets.push({
+                    label: chartDef.data.datasets[m].label || '',
+                    data: chartDef.data.datasets[m].data,
+                    borderColor: palette[m % palette.length],
+                    backgroundColor: 'transparent',
+                    fill: false
+                });
+            }
+            var opts3 = buildCommonOpts();
+            opts3.plugins.legend = { display: true, position: 'bottom', labels: { font: { size: 11 } } };
+            config = { type: 'line', data: { labels: chartDef.data.labels, datasets: mlDatasets }, options: opts3 };
+        } else {
+            return null;
+        }
+
+        var chart = new Chart(canvas, config);
+        activeCharts.push(chart);
+        return chart;
+    }
+
+    // --- Layout Templates ---
+
+    function renderStatCards(rpt, colors) {
+        var html = '<div class="stat-card-grid">';
+        for (var i = 0; i < rpt.stat_cards.length; i++) {
+            var sc = rpt.stat_cards[i];
+            html += '<div class="stat-card" style="border-top: 3px solid ' + colors.primary + '">';
+            html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
+            html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function renderCharts(rpt) {
+        var charts = rpt.charts || [];
+        var gridClass = 'chart-grid';
+        if (charts.length === 1) {
+            gridClass = 'chart-grid-full';
+        } else if (charts.length === 3) {
+            gridClass = 'chart-grid-3';
+        }
+        var html = '<div class="' + gridClass + '">';
+        for (var i = 0; i < charts.length; i++) {
+            html += '<div class="chart-card">';
+            html += '<h3 class="chart-title">' + escapeHTML(charts[i].title) + '</h3>';
+            html += '<canvas id="' + escapeHTML(charts[i].id) + '"></canvas>';
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function renderSummary(rpt) {
+        var html = '<div class="summary-section">';
+        html += '<h3>AI Summary</h3>';
+        html += '<p>' + escapeHTML(rpt.summary) + '</p>';
+        html += '</div>';
+        return html;
+    }
+
+    function renderTable(rpt) {
+        var tbl = rpt.table;
+        if (!tbl || !tbl.columns || !tbl.rows) return '';
+        var badges = tbl.badges || {};
+        var html = '<div class="section">';
+        html += '<h3 class="section-title">Details</h3>';
+        html += '<table class="archive-table"><thead><tr>';
+        for (var c = 0; c < tbl.columns.length; c++) {
+            html += '<th>' + escapeHTML(tbl.columns[c]) + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+        if (tbl.rows.length === 0) {
+            html += '<tr><td colspan="' + tbl.columns.length + '" style="text-align:center;color:#888;">No data available</td></tr>';
+        } else {
+            for (var r = 0; r < tbl.rows.length; r++) {
+                html += '<tr>';
+                for (var c = 0; c < tbl.rows[r].length; c++) {
+                    var val = tbl.rows[r][c];
+                    var badgeMap = badges[c];
+                    if (badgeMap && badgeMap[val]) {
+                        html += '<td><span class="state-badge state-' + badgeMap[val] + '">' + escapeHTML(val) + '</span></td>';
+                    } else {
+                        html += '<td>' + escapeHTML(val) + '</td>';
+                    }
+                }
+                html += '</tr>';
+            }
+        }
+        html += '</tbody></table>';
+        html += '</div>';
+        return html;
+    }
+
+    function layoutStandard(rpt, colors) {
+        return renderStatCards(rpt, colors) + renderCharts(rpt) + renderSummary(rpt) + renderTable(rpt);
+    }
+
+    function layoutTableFirst(rpt, colors) {
+        return renderStatCards(rpt, colors) + renderSummary(rpt) + renderTable(rpt) + renderCharts(rpt);
+    }
+
+    function layoutChartHeavy(rpt, colors) {
+        return renderStatCards(rpt, colors) + renderCharts(rpt) + renderSummary(rpt) + renderTable(rpt);
+    }
+
+    function layoutFullWidth(rpt, colors) {
+        if (!rpt.charts || rpt.charts.length === 0) return layoutStandard(rpt, colors);
+        var hero = rpt.charts[0];
+        var html = renderStatCards(rpt, colors);
+        html += '<div class="chart-grid-full"><div class="chart-card">';
+        html += '<h3 class="chart-title">' + escapeHTML(hero.title) + '</h3>';
+        html += '<canvas id="' + escapeHTML(hero.id) + '"></canvas>';
+        html += '</div></div>';
+        if (rpt.charts.length > 1) {
+            var rest = { charts: rpt.charts.slice(1) };
+            html += '<div class="chart-grid">';
+            for (var i = 0; i < rest.charts.length; i++) {
+                html += '<div class="chart-card">';
+                html += '<h3 class="chart-title">' + escapeHTML(rest.charts[i].title) + '</h3>';
+                html += '<canvas id="' + escapeHTML(rest.charts[i].id) + '"></canvas>';
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+        html += renderSummary(rpt) + renderTable(rpt);
+        return html;
+    }
+
+    // --- Router ---
+
+    var app = document.getElementById('app');
+
+    function route() {
+        destroyCharts();
+        selectedPrioritySlug = null;
+
+        var hash = location.hash || '#/';
+        var parts = hash.replace('#/', '').split('/').filter(Boolean);
+
+        if (parts.length === 0) {
+            renderFrontPage();
+        } else if (parts.length === 1) {
+            var dept = findDepartment(parts[0]);
+            if (dept) {
+                renderDepartment(dept);
+            } else {
+                renderFrontPage();
+            }
+        } else if (parts.length === 2) {
+            var dept = findDepartment(parts[0]);
+            if (!dept) { renderFrontPage(); return; }
+            var pri = findPriority(dept, parts[1]);
+            if (pri) {
+                renderPriority(dept, pri);
+            } else {
+                renderFrontPage();
+            }
+        } else {
+            renderFrontPage();
+        }
+    }
+
+    window.addEventListener('hashchange', route);
+    document.addEventListener('DOMContentLoaded', route);
+
+    // --- Views ---
+
+    function renderFrontPage(preserveSelection) {
+        if (!preserveSelection) selectedDeptSlug = null;
+
+        var depts = CSUITE_DATA.departments;
+        var companyStats = aggregateCompanyStats();
+
+        // Page header
+        var html = '<div class="page-header">';
+        html += '<h1>CSuite Dashboard</h1>';
+        html += '<p class="page-subtitle">' + escapeHTML(CSUITE_DATA.company) + ' &middot; ' + depts.length + ' Departments &middot; ' + companyStats.totalPriorities + ' Priorities</p>';
+        html += '</div>';
+
+        // Mobile pill row (hidden on desktop)
+        html += '<div class="dept-pill-row">';
+        for (var p = 0; p < depts.length; p++) {
+            var pd = depts[p];
+            var pc = getDeptColors(pd.slug);
+            var pSel = (pd.slug === selectedDeptSlug) ? ' selected' : '';
+            var pBg = (pd.slug === selectedDeptSlug) ? 'background-color:' + pc.light + ';' : '';
+            html += '<span class="dept-pill' + pSel + '" data-slug="' + escapeHTML(pd.slug) + '" ';
+            html += 'style="border-left-color:' + pc.primary + ';' + pBg + '" ';
+            html += 'onclick="selectDepartment(\'' + escapeHTML(pd.slug) + '\')">';
+            html += escapeHTML(pd.name);
+            html += '</span>';
+        }
+        html += '</div>';
+
+        // Two-panel layout
+        html += '<div class="command-center">';
+
+        // Left panel — department cards
+        html += '<div class="dept-panel">';
+        for (var i = 0; i < depts.length; i++) {
+            var dept = depts[i];
+            var colors = getDeptColors(dept.slug);
+            var ds = companyStats.deptStats[i];
+            var isSelected = (dept.slug === selectedDeptSlug);
+            var selClass = isSelected ? ' selected' : '';
+            var bgStyle = isSelected ? 'background-color:' + colors.light + ';' : '';
+
+            html += '<div class="dept-panel-card' + selClass + '" data-slug="' + escapeHTML(dept.slug) + '" ';
+            html += 'style="border-left-color:' + colors.primary + ';' + bgStyle + '" ';
+            html += 'onclick="selectDepartment(\'' + escapeHTML(dept.slug) + '\')">';
+            html += '<div class="dept-panel-name">' + escapeHTML(dept.name) + '</div>';
+            html += '<div class="dept-panel-meta">';
+            html += '<span>' + ds.priorityCount + ' priorities</span>';
+            if (ds.activeCount > 0) {
+                html += '<span class="active-count">' + ds.activeCount + ' active</span>';
+            }
+            html += '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Main content area
+        html += '<div class="main-content">';
+        if (selectedDeptSlug) {
+            html += renderDeptSummaryContent(selectedDeptSlug, companyStats);
+        } else {
+            html += renderCompanyOverview(companyStats);
+        }
+        html += '</div>';
+
+        html += '</div>'; // close .command-center
+        app.innerHTML = html;
+
+        // Create charts after DOM is ready
+        createFrontPageCharts(companyStats, selectedDeptSlug);
+    }
+
+    function renderCompanyOverview(companyStats) {
+        var html = '';
+        var accentColor = '#1a1a2e';
+        var hrs = Math.round(companyStats.totalHours * 10) / 10;
+
+        // Stat cards
+        var statCards = [
+            { value: String(companyStats.totalPriorities), label: 'PRIORITIES', subtitle: 'Across ' + companyStats.totalDepts + ' departments' },
+            { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + companyStats.quantifiableCount + ' quantifiable priorities' },
+            { value: String(companyStats.statusCounts['In Progress']), label: 'ACTIVELY IN PROGRESS', subtitle: 'Of ' + companyStats.totalPriorities + ' total' },
+            { value: String(companyStats.statusCounts['Completed']), label: 'COMPLETED', subtitle: 'Automation priorities' }
+        ];
+        html += '<div class="stat-card-grid">';
+        for (var i = 0; i < statCards.length; i++) {
+            var sc = statCards[i];
+            html += '<div class="stat-card" style="border-top: 3px solid ' + accentColor + '">';
+            html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
+            html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Charts — horizontal bar (tall) + doughnut
+        var chartDefs = buildCompanyChartConfigs(companyStats);
+        html += '<div class="chart-grid">';
+        html += '<div class="chart-card-tall">';
+        html += '<h3 class="chart-title">' + escapeHTML(chartDefs[0].title) + '</h3>';
+        html += '<canvas id="' + escapeHTML(chartDefs[0].id) + '"></canvas>';
+        html += '</div>';
+        html += '<div class="chart-card">';
+        html += '<h3 class="chart-title">' + escapeHTML(chartDefs[1].title) + '</h3>';
+        html += '<canvas id="' + escapeHTML(chartDefs[1].id) + '"></canvas>';
+        html += '</div>';
+        html += '</div>';
+
+        // AI Summary
+        html += '<div class="summary-section">';
+        html += '<h3>Company Overview</h3>';
+        html += '<p>' + generateCompanySummary(companyStats) + '</p>';
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderDeptSummaryContent(slug, companyStats) {
+        var dept = findDepartment(slug);
+        if (!dept) return '<div class="empty-state">Department not found.</div>';
+
+        var colors = getDeptColors(slug);
+        var deptStats = aggregateDeptStats(dept);
+        var hrs = Math.round(deptStats.totalHours * 10) / 10;
+        var html = '';
+
+        // Section header
+        html += '<div class="page-header" style="margin-bottom: 24px;">';
+        html += '<h2 style="color:' + colors.primary + '">' + escapeHTML(dept.name) + '</h2>';
+        html += '</div>';
+
+        // Stat cards with department color accent
+        var statCards = [
+            { value: String(deptStats.priorityCount), label: 'PRIORITIES', subtitle: 'In ' + escapeHTML(dept.name) },
+            { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + deptStats.quantifiableCount + ' quantifiable' },
+            { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities' },
+            { value: deptStats.topImpact, label: 'HIGHEST IMPACT LEVEL', subtitle: 'Across ' + deptStats.priorityCount + ' priorities' }
+        ];
+        html += '<div class="stat-card-grid">';
+        for (var i = 0; i < statCards.length; i++) {
+            var sc = statCards[i];
+            html += '<div class="stat-card" style="border-top: 3px solid ' + colors.primary + '">';
+            html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
+            html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Charts
+        var chartDefs = buildDeptChartConfigs(deptStats, slug);
+        html += '<div class="chart-grid">';
+        for (var i = 0; i < chartDefs.length; i++) {
+            html += '<div class="chart-card">';
+            html += '<h3 class="chart-title">' + escapeHTML(chartDefs[i].title) + '</h3>';
+            html += '<canvas id="' + escapeHTML(chartDefs[i].id) + '"></canvas>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // AI Summary
+        html += '<div class="summary-section">';
+        html += '<h3>Department Summary</h3>';
+        html += '<p>' + generateDeptSummary(dept, deptStats) + '</p>';
+        html += '</div>';
+
+        // CTA button
+        html += '<div style="text-align: center; margin-top: 24px;">';
+        html += '<a class="cta-button" style="background-color:' + colors.primary + '" ';
+        html += 'href="#/' + escapeHTML(dept.slug) + '">';
+        html += 'View Department Dashboard &rarr;';
+        html += '</a>';
+        html += '</div>';
+
+        return html;
+    }
+
+    function getStatusSummary(dept) {
+        if (!dept.priorities || dept.priorities.length === 0) {
+            return 'No priorities defined';
+        }
+        var counts = {};
+        for (var i = 0; i < dept.priorities.length; i++) {
+            var s = dept.priorities[i].status;
+            counts[s] = (counts[s] || 0) + 1;
+        }
+        var order = ['In Progress', 'Completed', 'Not Started'];
+        var parts = [];
+        for (var j = 0; j < order.length; j++) {
+            if (counts[order[j]]) {
+                parts.push(counts[order[j]] + ' ' + order[j]);
+            }
+        }
+        return parts.join(', ');
+    }
+
+    // --- Command Center Helpers ---
+
+    function parseWeeklyHours(str) {
+        if (!str || typeof str !== 'string') return 0;
+        var s = str.trim();
+        // Non-quantifiable keywords
+        if (/^(Variable|N\/A|Blocked|TBD)$/i.test(s)) return 0;
+        // Range or days/year format — non-quantifiable
+        if (/days?\/?year/i.test(s) || /\d+-\d+/.test(s)) return 0;
+        // Strip parenthetical qualifiers e.g. "(H1)"
+        s = s.replace(/\s*\([^)]*\)\s*/g, '');
+        // Strip tilde
+        s = s.replace(/~/g, '');
+        // Minutes
+        if (/min/i.test(s)) {
+            var m = parseFloat(s);
+            return isNaN(m) ? 0 : m / 60;
+        }
+        // Hours
+        if (/hr/i.test(s)) {
+            var h = parseFloat(s);
+            return isNaN(h) ? 0 : h;
+        }
+        // Fallback — try parsing as a number
+        var n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+    }
+
+    function aggregateDeptStats(dept) {
+        var stats = {
+            priorityCount: 0, activeCount: 0, completedCount: 0, notStartedCount: 0,
+            totalHours: 0, quantifiableCount: 0,
+            topImpact: 'Low',
+            impactCounts: { Critical: 0, High: 0, Medium: 0, Low: 0 },
+            complexityCounts: { High: 0, Medium: 0, Low: 0 }
+        };
+        var impactRank = { Critical: 4, High: 3, Medium: 2, Low: 1 };
+        var topRank = 0;
+        var pris = dept.priorities || [];
+        stats.priorityCount = pris.length;
+        for (var i = 0; i < pris.length; i++) {
+            var p = pris[i];
+            if (p.status === 'In Progress') stats.activeCount++;
+            else if (p.status === 'Completed') stats.completedCount++;
+            else stats.notStartedCount++;
+
+            var hrs = parseWeeklyHours(p.weekly_hours);
+            if (hrs > 0) { stats.totalHours += hrs; stats.quantifiableCount++; }
+
+            var imp = p.impact || 'Medium';
+            // Normalize "Medium-High" to "High"
+            var impKey = imp.replace('-', '').indexOf('High') >= 0 && imp !== 'High' ? 'High' : imp;
+            if (stats.impactCounts[impKey] !== undefined) stats.impactCounts[impKey]++;
+            var rank = impactRank[impKey] || 0;
+            if (rank > topRank) { topRank = rank; stats.topImpact = impKey; }
+
+            var cx = p.complexity || 'Medium';
+            var cxKey = cx.indexOf('High') >= 0 && cx !== 'High' ? 'High' : cx;
+            if (stats.complexityCounts[cxKey] !== undefined) stats.complexityCounts[cxKey]++;
+        }
+        return stats;
+    }
+
+    function aggregateCompanyStats() {
+        var depts = CSUITE_DATA.departments;
+        var company = {
+            totalPriorities: 0, totalDepts: depts.length,
+            totalHours: 0, quantifiableCount: 0,
+            statusCounts: { 'In Progress': 0, Completed: 0, 'Not Started': 0 },
+            deptStats: []
+        };
+        for (var i = 0; i < depts.length; i++) {
+            var ds = aggregateDeptStats(depts[i]);
+            ds.name = depts[i].name;
+            ds.slug = depts[i].slug;
+            company.totalPriorities += ds.priorityCount;
+            company.totalHours += ds.totalHours;
+            company.quantifiableCount += ds.quantifiableCount;
+            company.statusCounts['In Progress'] += ds.activeCount;
+            company.statusCounts['Completed'] += ds.completedCount;
+            company.statusCounts['Not Started'] += ds.notStartedCount;
+            company.deptStats.push(ds);
+        }
+        return company;
+    }
+
+    function generateCompanySummary(stats) {
+        var hrs = Math.round(stats.totalHours * 10) / 10;
+        return escapeHTML(CSUITE_DATA.company) + '\'s automation portfolio spans ' + stats.totalPriorities +
+            ' priorities across ' + stats.totalDepts + ' departments, estimating ' + hrs +
+            ' hours per week in savings from ' + stats.quantifiableCount + ' quantifiable initiatives. ' +
+            stats.statusCounts['In Progress'] + ' are actively in progress, ' +
+            stats.statusCounts['Completed'] + ' are completed, and ' +
+            stats.statusCounts['Not Started'] + ' are queued for implementation.';
+    }
+
+    function generateDeptSummary(dept, stats) {
+        var hrs = Math.round(stats.totalHours * 10) / 10;
+        return escapeHTML(dept.name) + ' has ' + stats.priorityCount +
+            ' priorities estimating ' + hrs + ' hours per week in savings. ' +
+            stats.activeCount + ' are in progress, ' + stats.completedCount +
+            ' completed, and ' + stats.notStartedCount + ' queued. Top impact level: ' +
+            stats.topImpact + '.';
+    }
+
+    function buildCompanyChartConfigs(companyStats) {
+        // Chart 1: Horizontal bar — priority count by department
+        var deptLabels = [];
+        var deptCounts = [];
+        var deptColors = [];
+        for (var i = 0; i < companyStats.deptStats.length; i++) {
+            var ds = companyStats.deptStats[i];
+            deptLabels.push(ds.name);
+            deptCounts.push(ds.priorityCount);
+            var c = getDeptColors(ds.slug);
+            deptColors.push(c.primary);
+        }
+        var barChart = {
+            id: 'cc-company-dept-bar',
+            title: 'Priorities by Department',
+            type: 'horizontal-bar',
+            data: {
+                labels: deptLabels,
+                datasets: [{ label: 'Priorities', data: deptCounts }]
+            },
+            _customColors: deptColors
+        };
+
+        // Chart 2: Doughnut — status breakdown
+        var statusChart = {
+            id: 'cc-company-status-doughnut',
+            title: 'Status Breakdown',
+            type: 'doughnut',
+            data: {
+                labels: ['In Progress', 'Completed', 'Not Started'],
+                datasets: [{ data: [
+                    companyStats.statusCounts['In Progress'],
+                    companyStats.statusCounts['Completed'],
+                    companyStats.statusCounts['Not Started']
+                ] }]
+            }
+        };
+
+        return [barChart, statusChart];
+    }
+
+    function buildDeptChartConfigs(deptStats, slug) {
+        // Chart 1: Doughnut — status breakdown
+        var statusChart = {
+            id: 'cc-dept-status-' + slug,
+            title: 'Status Breakdown',
+            type: 'doughnut',
+            data: {
+                labels: ['In Progress', 'Completed', 'Not Started'],
+                datasets: [{ data: [
+                    deptStats.activeCount,
+                    deptStats.completedCount,
+                    deptStats.notStartedCount
+                ] }]
+            }
+        };
+
+        // Chart 2: Doughnut — impact distribution
+        var impactChart = {
+            id: 'cc-dept-impact-' + slug,
+            title: 'Impact Distribution',
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'High', 'Medium', 'Low'],
+                datasets: [{ data: [
+                    deptStats.impactCounts.Critical,
+                    deptStats.impactCounts.High,
+                    deptStats.impactCounts.Medium,
+                    deptStats.impactCounts.Low
+                ] }]
+            }
+        };
+
+        return [statusChart, impactChart];
+    }
+
+    // --- Command Center State ---
+
+    var selectedDeptSlug = null;
+    var selectedPrioritySlug = null;
+    var currentDept = null;
+
+    function selectDepartment(slug) {
+        if (slug === selectedDeptSlug) {
+            selectedDeptSlug = null;
+        } else {
+            selectedDeptSlug = slug;
+        }
+        destroyCharts();
+        renderFrontPage(true);
+    }
+
+    function selectPriority(slug) {
+        if (slug === selectedPrioritySlug) {
+            selectedPrioritySlug = null;
+        } else {
+            selectedPrioritySlug = slug;
+        }
+        destroyCharts();
+        renderDepartment(currentDept, true);
+        var mc = document.querySelector('.main-content');
+        if (mc) mc.scrollTop = 0;
+    }
+
+    function createDeptPageCharts(dept, selectedSlug, deptStats) {
+        var colors = getDeptColors(dept.slug);
+
+        if (selectedSlug) {
+            // Priority summary charts — first 2 from reporting.charts
+            var pri = findPriority(dept, selectedSlug);
+            if (pri && pri.reporting && pri.reporting.charts) {
+                var charts = pri.reporting.charts.slice(0, 2);
+                for (var i = 0; i < charts.length; i++) {
+                    createChart(charts[i], colors);
+                }
+            }
+        } else {
+            // Department overview charts
+            var chartDefs = buildDeptChartConfigs(deptStats, dept.slug);
+            for (var i = 0; i < chartDefs.length; i++) {
+                createChart(chartDefs[i], colors);
+            }
+        }
+
+        // scrollIntoView for mobile pill
+        if (selectedSlug) {
+            var pill = document.querySelector('.pri-pill[data-slug="' + selectedSlug + '"]');
+            if (pill) pill.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+        }
+    }
+
+    function createFrontPageCharts(companyStats, deptSlug) {
+        if (deptSlug) {
+            // Department charts — use standard createChart with dept colors
+            // Note: createChart() already pushes to activeCharts internally
+            var colors = getDeptColors(deptSlug);
+            var dept = findDepartment(deptSlug);
+            var deptStats = aggregateDeptStats(dept);
+            var chartDefs = buildDeptChartConfigs(deptStats, deptSlug);
+            for (var i = 0; i < chartDefs.length; i++) {
+                createChart(chartDefs[i], colors);
+            }
+        } else {
+            // Company-wide charts
+            var chartDefs = buildCompanyChartConfigs(companyStats);
+
+            // Chart 1: Horizontal bar with per-department colors (custom construction)
+            var barDef = chartDefs[0];
+            var barCanvas = document.getElementById(barDef.id);
+            if (barCanvas) {
+                var barOpts = buildCommonOpts();
+                barOpts.indexAxis = 'y';
+                barOpts.plugins.legend = { display: false };
+                barOpts.scales.x = { beginAtZero: true, ticks: { font: { size: 11 } }, grid: { color: '#f0f0f0' } };
+                barOpts.scales.y = { ticks: { font: { size: 11 } }, grid: { display: false } };
+                var barChart = new Chart(barCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: barDef.data.labels,
+                        datasets: [{
+                            label: barDef.data.datasets[0].label,
+                            data: barDef.data.datasets[0].data,
+                            backgroundColor: barDef._customColors,
+                            borderRadius: 3
+                        }]
+                    },
+                    options: barOpts
+                });
+                activeCharts.push(barChart);
+            }
+
+            // Chart 2: Status doughnut with neutral colors
+            // Note: createChart() already pushes to activeCharts internally
+            var neutralColors = { primary: '#4a90d9', secondary: '#28a745', tertiary: '#aaa' };
+            createChart(chartDefs[1], neutralColors);
+        }
+
+        // scrollIntoView for mobile pill
+        if (deptSlug) {
+            var pill = document.querySelector('.dept-pill[data-slug="' + deptSlug + '"]');
+            if (pill) pill.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+        }
+    }
+
+    function renderDepartment(dept, preserveSelection) {
+        currentDept = dept;
+        if (!preserveSelection) selectedPrioritySlug = null;
+
+        var colors = getDeptColors(dept.slug);
+        var pris = dept.priorities || [];
+
+        var html = '<a href="#/" class="breadcrumb">&larr; All Departments</a>';
+        html += '<div class="page-header">';
+        html += '<h1>' + escapeHTML(dept.name) + '</h1>';
+        html += '<p class="page-subtitle">' + pris.length + ' AI Priorities</p>';
+        html += '</div>';
+
+        if (pris.length === 0) {
+            html += '<div class="empty-state">No AI priorities defined yet.</div>';
+            app.innerHTML = html;
+            return;
+        }
+
+        // Mobile priority pill row (hidden on desktop)
+        html += '<div class="pri-pill-row">';
+        for (var p = 0; p < pris.length; p++) {
+            var pill = pris[p];
+            var pillSel = (pill.slug === selectedPrioritySlug) ? ' selected' : '';
+            var pillBg = (pill.slug === selectedPrioritySlug) ? 'background-color:' + colors.light + ';' : '';
+            var pillName = pill.name.length > 25 ? pill.name.substring(0, 25) + '\u2026' : pill.name;
+            html += '<span class="pri-pill' + pillSel + '" data-slug="' + escapeHTML(pill.slug) + '" ';
+            html += 'style="border-left-color:' + colors.primary + ';' + pillBg + '" ';
+            html += 'onclick="selectPriority(\'' + escapeHTML(pill.slug) + '\')">';
+            html += '#' + pill.rank + ' ' + escapeHTML(pillName);
+            html += '</span>';
+        }
+        html += '</div>';
+
+        // Two-panel layout
+        html += '<div class="command-center">';
+
+        // Left panel — priority cards
+        html += '<div class="dept-panel">';
+        for (var i = 0; i < pris.length; i++) {
+            var pr = pris[i];
+            var isSelected = (pr.slug === selectedPrioritySlug);
+            var selClass = isSelected ? ' selected' : '';
+            var bgStyle = isSelected ? 'background-color:' + colors.light + ';' : '';
+
+            html += '<div class="pri-panel-card' + selClass + '" data-slug="' + escapeHTML(pr.slug) + '" ';
+            html += 'style="border-left-color:' + colors.primary + ';' + bgStyle + '" ';
+            html += 'onclick="selectPriority(\'' + escapeHTML(pr.slug) + '\')">';
+            html += '<div class="pri-panel-header">';
+            html += '<span class="pri-panel-rank">#' + pr.rank + '</span>';
+            html += '<span class="pri-panel-name">' + escapeHTML(pr.name) + '</span>';
+            html += '</div>';
+            html += '<div class="pri-panel-meta">';
+            html += '<span class="card-badge ' + badgeClass(pr.status) + '">' + escapeHTML(pr.status) + '</span>';
+            html += '<span class="' + impactClass(pr.impact || '') + '">' + escapeHTML(pr.impact || '\u2014') + '</span>';
+            html += '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Main content area
+        html += '<div class="main-content">';
+        if (selectedPrioritySlug) {
+            html += renderPrioritySummary(dept, selectedPrioritySlug, colors);
+        } else {
+            html += renderDeptOverview(dept, colors);
+        }
+        html += '</div>';
+
+        html += '</div>'; // close .command-center
+        app.innerHTML = html;
+
+        // Create charts after DOM is ready
+        var deptStats = aggregateDeptStats(dept);
+        createDeptPageCharts(dept, selectedPrioritySlug, deptStats);
+    }
+
+    function renderDeptOverview(dept, colors) {
+        var deptStats = aggregateDeptStats(dept);
+        var hrs = Math.round(deptStats.totalHours * 10) / 10;
+        var html = '';
+
+        // Stat cards
+        var statCards = [
+            { value: String(deptStats.priorityCount), label: 'PRIORITIES', subtitle: 'In ' + escapeHTML(dept.name) },
+            { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + deptStats.quantifiableCount + ' quantifiable' },
+            { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities' },
+            { value: deptStats.topImpact, label: 'HIGHEST IMPACT LEVEL', subtitle: 'Across ' + deptStats.priorityCount + ' priorities' }
+        ];
+        html += '<div class="stat-card-grid">';
+        for (var i = 0; i < statCards.length; i++) {
+            var sc = statCards[i];
+            html += '<div class="stat-card" style="border-top: 3px solid ' + colors.primary + '">';
+            html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
+            html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Charts
+        var chartDefs = buildDeptChartConfigs(deptStats, dept.slug);
+        html += '<div class="chart-grid">';
+        for (var i = 0; i < chartDefs.length; i++) {
+            html += '<div class="chart-card">';
+            html += '<h3 class="chart-title">' + escapeHTML(chartDefs[i].title) + '</h3>';
+            html += '<canvas id="' + escapeHTML(chartDefs[i].id) + '"></canvas>';
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // AI Summary
+        html += '<div class="summary-section">';
+        html += '<h3>Department Summary</h3>';
+        html += '<p>' + generateDeptSummary(dept, deptStats) + '</p>';
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderPrioritySummary(dept, priSlug, colors) {
+        var pri = findPriority(dept, priSlug);
+        if (!pri || !pri.reporting) return '<div class="empty-state">Priority data not available.</div>';
+
+        var rpt = pri.reporting;
+        var html = '';
+
+        // Priority header
+        html += '<div class="page-header" style="margin-bottom: 24px;">';
+        html += '<h2 style="color:' + colors.primary + '">' + escapeHTML(pri.name) + '</h2>';
+        html += '<p class="page-subtitle">#' + pri.rank + ' &middot; ';
+        html += '<span class="card-badge ' + badgeClass(pri.status) + '">' + escapeHTML(pri.status) + '</span>';
+        html += ' &middot; ' + escapeHTML(pri.weekly_hours || '\u2014') + '/week</p>';
+        html += '</div>';
+
+        // Stat cards from reporting
+        html += renderStatCards(rpt, colors);
+
+        // First 2 charts
+        var charts = rpt.charts ? rpt.charts.slice(0, 2) : [];
+        if (charts.length > 0) {
+            html += '<div class="chart-grid">';
+            for (var i = 0; i < charts.length; i++) {
+                html += '<div class="chart-card">';
+                html += '<h3 class="chart-title">' + escapeHTML(charts[i].title) + '</h3>';
+                html += '<canvas id="' + escapeHTML(charts[i].id) + '"></canvas>';
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        // AI Summary
+        html += '<div class="summary-section">';
+        html += '<h3>AI Summary</h3>';
+        html += '<p>' + escapeHTML(rpt.summary) + '</p>';
+        html += '</div>';
+
+        // CTA button
+        html += '<div style="text-align: center; margin-top: 24px;">';
+        html += '<a class="cta-button" style="background-color:' + colors.primary + '" ';
+        html += 'href="#/' + escapeHTML(dept.slug) + '/' + escapeHTML(pri.slug) + '">';
+        html += 'View Full Details &rarr;';
+        html += '</a>';
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderPriority(dept, pri) {
+        var rpt = pri.reporting;
+        var colors = getDeptColors(dept.slug);
+
+        var html = '<a href="#/' + escapeHTML(dept.slug) + '" class="breadcrumb">&larr; ' + escapeHTML(dept.name) + '</a>';
+        html += '<a href="#/" class="breadcrumb-secondary">&larr; All Departments</a>';
+        html += '<div class="page-header">';
+        html += '<h1>' + escapeHTML(pri.name) + '</h1>';
+        html += '<p class="page-subtitle">#' + pri.rank + ' &middot; ';
+        html += '<span class="card-badge ' + badgeClass(pri.status) + '">' + escapeHTML(pri.status) + '</span>';
+        html += ' &middot; ' + escapeHTML(pri.weekly_hours || '\u2014') + '/week</p>';
+        html += '</div>';
+
+        if (!rpt) {
+            html += '<div class="empty-state">Reporting data coming soon.</div>';
+            app.innerHTML = html;
+            return;
+        }
+
+        // Select layout
+        var layoutFn = layoutStandard;
+        if (rpt.layout === 'table-first') layoutFn = layoutTableFirst;
+        else if (rpt.layout === 'chart-heavy') layoutFn = layoutChartHeavy;
+        else if (rpt.layout === 'full-width') layoutFn = layoutFullWidth;
+
+        html += layoutFn(rpt, colors);
+        app.innerHTML = html;
+
+        // Create Chart.js instances after DOM is set
+        var charts = rpt.charts || [];
+        for (var i = 0; i < charts.length; i++) {
+            createChart(charts[i], colors);
+        }
+    }
+    </script>
+</body>
+</html>
