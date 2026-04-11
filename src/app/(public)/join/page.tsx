@@ -44,10 +44,9 @@ export default function JoinPage() {
       if (!user) { router.push('/login'); return; }
 
       const slug = orgName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').trim();
-      const { data: org, error: orgError } = await supabase.from('organizations').insert({ name: orgName, slug }).select().single();
-      if (orgError) { setError(orgError.message.includes('duplicate') ? 'An organization with this name already exists' : orgError.message); setLoading(false); return; }
+      const { error: rpcError } = await supabase.rpc('create_organization', { p_name: orgName, p_slug: slug });
+      if (rpcError) { setError(rpcError.message.includes('duplicate') ? 'An organization with this name already exists' : rpcError.message); setLoading(false); return; }
 
-      await supabase.from('org_members').insert({ org_id: org.id, user_id: user.id, role: 'owner' });
       router.push(`/org/${slug}/priorities`);
       router.refresh();
     } catch { setError('Failed to create organization'); setLoading(false); }
