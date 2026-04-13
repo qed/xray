@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { orgId, email, role, maxUses } = await req.json();
+  const { orgId, email, role, maxUses, departmentIds } = await req.json();
   if (!orgId || !email || !role) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const code = Math.random().toString(36).substring(2, 10);
 
-  // Create invite row
+  // Create invite row with optional department pre-assignment
   const { error: insertError } = await supabase.from('invites').insert({
     org_id: orgId,
     code,
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     role,
     max_uses: maxUses ? parseInt(maxUses, 10) : 1,
     created_by: user.id,
+    ...(Array.isArray(departmentIds) && departmentIds.length > 0 ? { department_ids: departmentIds } : {}),
   });
 
   if (insertError) {

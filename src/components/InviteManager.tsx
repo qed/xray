@@ -13,9 +13,15 @@ interface Invite {
   expires_at: string | null;
 }
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+}
+
 interface InviteManagerProps {
   invites: Invite[];
   orgId: string;
+  departments?: DepartmentOption[];
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -23,13 +29,20 @@ const ROLE_LABELS: Record<string, string> = {
   member: 'Team Member',
 };
 
-export default function InviteManager({ invites, orgId }: InviteManagerProps) {
+export default function InviteManager({ invites, orgId, departments = [] }: InviteManagerProps) {
   const router = useRouter();
   const [sending, setSending] = useState(false);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin' | 'member'>('member');
+  const [selectedDeptIds, setSelectedDeptIds] = useState<string[]>([]);
   const [result, setResult] = useState<{ code: string; emailSent: boolean } | null>(null);
   const [error, setError] = useState('');
+
+  function toggleDepartment(deptId: string) {
+    setSelectedDeptIds((prev) =>
+      prev.includes(deptId) ? prev.filter((id) => id !== deptId) : [...prev, deptId]
+    );
+  }
 
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -40,7 +53,12 @@ export default function InviteManager({ invites, orgId }: InviteManagerProps) {
     const res = await fetch('/api/invites', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orgId, email, role }),
+      body: JSON.stringify({
+        orgId,
+        email,
+        role,
+        departmentIds: selectedDeptIds.length > 0 ? selectedDeptIds : undefined,
+      }),
     });
 
     const data = await res.json();
@@ -49,6 +67,7 @@ export default function InviteManager({ invites, orgId }: InviteManagerProps) {
     } else {
       setResult({ code: data.code, emailSent: data.emailSent });
       setEmail('');
+      setSelectedDeptIds([]);
     }
 
     setSending(false);
@@ -57,36 +76,71 @@ export default function InviteManager({ invites, orgId }: InviteManagerProps) {
 
   return (
     <div className="space-y-4">
-      <form onSubmit={sendInvite} className="flex flex-wrap gap-3 items-end">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
-            placeholder="name@company.com"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
-            className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+      <form onSubmit={sendInvite} className="space-y-3">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+              placeholder="name@company.com"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
+              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+            >
+              <option value="member">Team Member</option>
+              <option value="admin">Executive</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={sending}
+            className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-40"
           >
-            <option value="member">Team Member</option>
-            <option value="admin">Executive</option>
-          </select>
+            {sending ? 'Sending...' : 'Send Invite'}
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={sending}
-          className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-40"
-        >
-          {sending ? 'Sending...' : 'Send Invite'}
-        </button>
+
+        {departments.length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1.5">
+              Pre-assign departments <span className="text-slate-400">(optional)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {departments.map((dept) => (
+                <label
+                  key={dept.id}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer border transition-colors ${
+                    selectedDeptIds.includes(dept.id)
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedDeptIds.includes(dept.id)}
+                    onChange={() => toggleDepartment(dept.id)}
+                    className="sr-only"
+                  />
+                  {selectedDeptIds.includes(dept.id) && (
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  )}
+                  {dept.name}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </form>
 
       {error && (

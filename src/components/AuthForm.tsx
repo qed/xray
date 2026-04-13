@@ -48,6 +48,17 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
             if (!existing) {
               await supabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: invite.role ?? 'member' });
               await supabase.from('invites').update({ use_count: invite.use_count + 1 }).eq('id', invite.id);
+
+              // Link pre-assigned departments if any
+              const deptIds = invite.department_ids;
+              if (Array.isArray(deptIds) && deptIds.length > 0) {
+                await supabase.rpc('link_departments_for_invite', {
+                  p_user_id: user.id,
+                  p_department_ids: deptIds,
+                  p_org_id: invite.org_id,
+                  p_invite_id: invite.id,
+                });
+              }
             }
           }
         }
