@@ -1,8 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getOrgBySlug, getUserRole, getCompanyOverview, getTimeSavingsRollup, getStrategicBlockers, getTopWins, getStaffingOverview } from '@/lib/db';
-import DashboardContent from '@/components/DashboardContent';
-import ExecutiveDashboard from '@/components/ExecutiveDashboard';
+import { getOrgBySlug, getUserRole, getCompanyOverview, getTimeSavingsRollup, getDepartments } from '@/lib/db';
+import { getColorPalette } from '@/lib/constants';
+import CompanyDashboard from '@/components/dashboard/CompanyDashboard';
 
 export default async function DashboardPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -16,34 +16,34 @@ export default async function DashboardPage({ params }: { params: Promise<{ orgS
   const role = await getUserRole(org.id, user.id);
   if (!role) redirect('/join');
 
-  const [overview, timeSavings, blockers, allOpportunities, staffing] = await Promise.all([
+  const [overview, timeSavings, departments] = await Promise.all([
     getCompanyOverview(org.id),
     getTimeSavingsRollup(org.id),
-    getStrategicBlockers(org.id),
-    getTopWins(org.id, 1000),
-    getStaffingOverview(org.id),
+    getDepartments(org.id),
   ]);
 
-  if (role === 'admin') {
-    return (
-      <ExecutiveDashboard
-        departments={overview.departments}
-        timeSavings={timeSavings}
-        allOpportunities={allOpportunities}
-        staffing={staffing}
-        orgSlug={orgSlug}
-        orgName={org.name}
-      />
-    );
-  }
+  // Build department list with color palettes
+  const departmentsWithPalettes = overview.departments.map((dept) => {
+    const dbDept = departments.find((d) => d.slug === dept.slug);
+    return {
+      ...dept,
+      palette: getColorPalette(dbDept?.color_index ?? null),
+    };
+  });
+
+  // Count quantifiable priorities (those with valid parsed time savings)
+  const quantifiableCount = overview.topWins.filter((w) => w.parsedTimeSavings.valid).length;
 
   return (
-    <DashboardContent
-      allOpportunities={allOpportunities}
-      departments={overview.departments}
-      timeSavings={timeSavings}
-      blockers={blockers}
+    <CompanyDashboard
       orgSlug={orgSlug}
+      orgName={org.name}
+      departments={departmentsWithPalettes}
+      totalPriorities={overview.totalOpportunities}
+      totalInProgress={overview.byMilestoneStage[1] + overview.byMilestoneStage[2]}
+      totalCompleted={overview.totalCompleted}
+      totalHoursPerWeek={timeSavings.totalPotentialHoursPerWeek}
+      quantifiableCount={quantifiableCount}
     />
   );
 }
