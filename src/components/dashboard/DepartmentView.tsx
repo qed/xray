@@ -64,7 +64,7 @@ export default function DepartmentView({
       {/* Page header */}
       <div className="mb-6">
         <Link href={`/org/${orgSlug}/dashboard`} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
-          &larr; All Departments
+          &larr; Dashboard
         </Link>
         <h1 className="text-2xl font-bold mt-1" style={{ color: palette.primary }}>{deptName}</h1>
         <p className="text-sm text-slate-500 mt-1">{total} priorities</p>

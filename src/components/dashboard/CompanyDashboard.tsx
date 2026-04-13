@@ -156,7 +156,7 @@ function CompanyOverviewContent({
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <DashboardChart chart={deptBarChart} palette={palette} height={Math.max(200, departments.length * 32)} />
+        <DashboardChart chart={deptBarChart} palette={palette} height={Math.max(200, departments.length * 32)} barColors={departments.map((d) => d.palette.primary)} />
         <DashboardChart chart={statusDoughnut} palette={palette} />
       </div>
 

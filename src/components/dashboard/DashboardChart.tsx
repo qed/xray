@@ -14,11 +14,13 @@ interface DashboardChartProps {
   chart: ReportingChart;
   palette: ColorPalette;
   height?: number;
+  /** Per-bar colors for horizontal-bar charts (one color per data point) */
+  barColors?: string[];
 }
 
 const DOUGHNUT_COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1', '#06b6d4', '#8b5cf6'];
 
-export default function DashboardChart({ chart, palette, height = 280 }: DashboardChartProps) {
+export default function DashboardChart({ chart, palette, height = 280, barColors }: DashboardChartProps) {
   const { type, data, title } = chart;
 
   // Transform chart data into recharts format
@@ -36,7 +38,7 @@ export default function DashboardChart({ chart, palette, height = 280 }: Dashboa
     <div className="bg-white rounded-lg border border-slate-200 p-4">
       <h3 className="text-sm font-semibold text-slate-700 mb-3">{title}</h3>
       <ResponsiveContainer width="100%" height={height}>
-        {renderChart(type, rechartsData, data.datasets, datasetColors)}
+        {renderChart(type, rechartsData, data.datasets, datasetColors, barColors)}
       </ResponsiveContainer>
     </div>
   );
@@ -47,6 +49,7 @@ function renderChart(
   data: Record<string, string | number>[],
   datasets: { label: string; data: number[] }[],
   colors: string[],
+  barColors?: string[],
 ) {
   switch (type) {
     case 'bar':
@@ -129,7 +132,11 @@ function renderChart(
           <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={120} />
           <Tooltip contentStyle={{ fontSize: 12 }} />
           {datasets.map((ds, i) => (
-            <Bar key={ds.label} dataKey={ds.label} fill={colors[i % colors.length]} radius={[0, 2, 2, 0]} />
+            <Bar key={ds.label} dataKey={ds.label} fill={colors[i % colors.length]} radius={[0, 2, 2, 0]}>
+              {barColors && data.map((_, j) => (
+                <Cell key={j} fill={barColors[j % barColors.length]} />
+              ))}
+            </Bar>
           ))}
         </BarChart>
       );
