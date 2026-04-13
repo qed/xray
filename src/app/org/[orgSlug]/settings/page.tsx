@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getOrgBySlug, getUserRole, getOrgMembers, getOrgInvites } from '@/lib/db';
+import { getOrgBySlug, getUserRole, getOrgMembers, getOrgInvites, getDepartments } from '@/lib/db';
 import MemberList from '@/components/MemberList';
 import InviteManager from '@/components/InviteManager';
 
@@ -18,8 +18,21 @@ export default async function SettingsPage({ params }: { params: Promise<{ orgSl
     redirect(`/org/${orgSlug}/dashboard`);
   }
 
-  const members = await getOrgMembers(org.id);
-  const invites = await getOrgInvites(org.id);
+  const [members, invites, departments] = await Promise.all([
+    getOrgMembers(org.id),
+    getOrgInvites(org.id),
+    getDepartments(org.id),
+  ]);
+
+  // Build member → department mapping
+  const { data: mdRows } = await supabase
+    .from('member_departments')
+    .select('user_id, department_id, department:departments!inner(org_id)')
+    .eq('department.org_id', org.id);
+  const memberDepartments: Record<string, string[]> = {};
+  for (const row of mdRows ?? []) {
+    (memberDepartments[row.user_id] ??= []).push(row.department_id);
+  }
 
   return (
     <div className="space-y-10 max-w-2xl">
@@ -35,12 +48,18 @@ export default async function SettingsPage({ params }: { params: Promise<{ orgSl
           currentUserId={user.id}
           currentUserRole={role}
           orgId={org.id}
+          departments={departments.map((d) => ({ id: d.id, name: d.name }))}
+          memberDepartments={memberDepartments}
         />
       </div>
 
       <div className="space-y-2">
         <h2 className="text-lg font-semibold text-slate-900">Invite Codes</h2>
-        <InviteManager invites={invites} orgId={org.id} />
+        <InviteManager
+          invites={invites}
+          orgId={org.id}
+          departments={departments.map((d) => ({ id: d.id, name: d.name }))}
+        />
       </div>
     </div>
   );

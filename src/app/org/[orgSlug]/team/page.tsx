@@ -1,9 +1,12 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { getOrgBySlug, getUserRole, getDepartmentBySlug, getPriorities, getTeamMembers, getTopWins } from '@/lib/db';
-import { MILESTONE_STAGES } from '@/lib/constants';
+import {
+  getOrgBySlug, getUserRole, getDepartments,
+  getPriorities, getTeamMembers, getTopWins,
+  getUserDepartments,
+} from '@/lib/db';
 import TeamView from './TeamView';
+import DepartmentPicker from './DepartmentPicker';
 
 export default async function TeamPage({ params }: { params: Promise<{ orgSlug: string }> }) {
   const { orgSlug } = await params;
@@ -17,70 +20,79 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
   const role = await getUserRole(org.id, user.id);
   if (!role) redirect('/join');
 
-  // Find this user's department from their approved intake conversation
-  const admin = createAdminClient();
-  const { data: convo } = await admin
-    .from('conversations')
-    .select('department_id')
-    .eq('org_id', org.id)
-    .eq('user_id', user.id)
-    .eq('mode', 'intake')
-    .eq('status', 'approved')
-    .not('department_id', 'is', null)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
+  // Get user's linked departments
+  const memberDepts = await getUserDepartments(user.id, org.id);
 
-  if (!convo?.department_id) {
+  // Owner/admin with no explicit links can see everything — but we still
+  // show the department picker for them to choose which department to view
+  if (memberDepts.length === 0) {
+    // Fetch all departments for the picker (admins/owners can see all, members see what RLS allows)
+    const allDepts = await getDepartments(org.id);
+
+    if (allDepts.length === 0) {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">My Team</h1>
+            <p className="text-slate-500 mt-1">No departments have been created yet.</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">My Team</h1>
-          <p className="text-slate-500 mt-1">Your department view will appear here once your intake is approved.</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-          <p className="text-slate-400 text-sm">No department linked to your account yet.</p>
-          <p className="text-slate-400 text-sm mt-2">Complete your intake conversation and wait for approval to see your team dashboard.</p>
-        </div>
-      </div>
+      <DepartmentPicker
+        orgId={org.id}
+        orgSlug={orgSlug}
+        departments={allDepts.map((d) => ({ id: d.id, name: d.name }))}
+        role={role}
+      />
     );
   }
 
-  // Load department data
-  const dept = await admin
-    .from('departments')
-    .select('*')
-    .eq('id', convo.department_id)
-    .single();
+  // Load data for all linked departments
+  const linkedDeptIds = memberDepts.map((md) => md.department_id);
+  const allDepts = await getDepartments(org.id);
+  const linkedDepts = allDepts.filter((d) => linkedDeptIds.includes(d.id));
 
-  if (!dept.data) notFound();
+  if (linkedDepts.length === 0) notFound();
 
-  const [dbPriorities, teamMembers, allOpps] = await Promise.all([
-    getPriorities(dept.data.id),
-    getTeamMembers(dept.data.id),
-    getTopWins(org.id, 100),
-  ]);
+  // Load priorities and team members for all linked departments in parallel
+  const deptData = await Promise.all(
+    linkedDepts.map(async (dept) => {
+      const [priorities, teamMembers] = await Promise.all([
+        getPriorities(dept.id),
+        getTeamMembers(dept.id),
+      ]);
+      const proposedCount = priorities.filter((p) => p.status === 'proposed').length;
+      const completedCount = priorities.filter((p) => p.status === 'complete').length;
+      const inProgressCount = priorities.filter((p) => p.status === 'in_progress').length;
+      const notStartedCount = priorities.filter(
+        (p) => p.status === 'not_started' || p.status === 'approved'
+      ).length;
+      const activeTotal = completedCount + inProgressCount + notStartedCount;
 
-  const deptOpps = allOpps.filter((opp) => opp.departmentSlug === dept.data.slug);
-
-  // Calculate readiness
-  const total = dbPriorities.length;
-  const completed = dbPriorities.filter((p) => p.milestone_stage >= 3).length;
-  const inProgress = dbPriorities.filter((p) => p.milestone_stage > 0 && p.milestone_stage < 3).length;
-  const progressPercent = total > 0 ? Math.round(((completed * 1.0 + inProgress * 0.5) / total) * 100) : 0;
+      return {
+        department: dept,
+        priorities,
+        teamMembers,
+        stats: {
+          total: priorities.length,
+          completed: completedCount,
+          inProgress: inProgressCount,
+          notStarted: notStartedCount,
+          proposed: proposedCount,
+          progressPercent: activeTotal > 0 ? Math.round((completedCount / activeTotal) * 100) : 0,
+        },
+      };
+    })
+  );
 
   return (
     <TeamView
-      department={dept.data}
-      priorities={deptOpps}
-      teamMembers={teamMembers}
-      stats={{
-        total,
-        completed,
-        inProgress,
-        notStarted: total - completed - inProgress,
-        progressPercent,
-      }}
+      departments={deptData}
+      orgSlug={orgSlug}
+      role={role}
     />
   );
 }

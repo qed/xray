@@ -43,6 +43,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid stage (must be 0-3)' }, { status: 400 });
   }
 
+  // Dual-write: update milestone stage AND priorities.status
+  const stageToStatus: Record<number, string> = {
+    0: 'not_started',
+    1: 'in_progress',
+    2: 'in_progress',
+    3: 'complete',
+  };
+
   const { error } = await supabase
     .from('milestones')
     .update({
@@ -55,6 +63,13 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Phase 1 dual-write: sync status column
+  const newStatus = stageToStatus[stage] ?? 'not_started';
+  await supabase
+    .from('priorities')
+    .update({ status: newStatus })
+    .eq('id', priorityId);
 
   return NextResponse.json({ success: true });
 }

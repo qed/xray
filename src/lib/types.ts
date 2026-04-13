@@ -61,6 +61,8 @@ export interface ScalingRisk {
 
 export interface CompanyOverview {
   totalOpportunities: number;
+  byStatus: Record<string, number>;
+  /** @deprecated use byStatus — kept for Phase 1 dual-write compatibility */
   byMilestoneStage: Record<number, number>;
   totalCompleted: number;
   departments: DepartmentSummary[];
@@ -87,7 +89,10 @@ export interface RankedOpportunity {
   effort: string;
   estimatedTimeSavings: string;
   parsedTimeSavings: ParsedTimeSavings;
+  status: string;
+  /** @deprecated use status — kept for Phase 1 dual-write compatibility */
   milestoneStage: number;
+  /** @deprecated use status */
   milestoneName: string;
   score: number;                   // computed from time savings and effort for ranking
   whatToAutomate: string;
@@ -294,6 +299,22 @@ export interface DbMilestone {
   stage: number;
   updated_at: string;
   notes: string;
+}
+
+export interface PriorityNote {
+  id: string;
+  priority_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
+
+export interface MemberDepartment {
+  id: string;
+  user_id: string;
+  department_id: string;
+  created_by: string | null;
+  created_at: string;
 }
 
 export interface ProjectBrief {

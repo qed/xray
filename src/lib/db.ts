@@ -1,13 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { computeScore, MILESTONE_STAGES } from '@/lib/constants';
+import { computeScore, MILESTONE_STAGES, PRIORITY_STATUSES } from '@/lib/constants';
 import type {
   DbDepartment, DbPriority, DbMilestone,
   Organization, OrgMember, Invite,
   RankedOpportunity, ParsedTimeSavings, Completeness, CompanyOverview,
   DepartmentSummary, TimeSavingsRollup, ConsolidatedRisk,
   StaffingOverview, DepartmentDependency, StrategicBlocker,
-  ToolOverlap, ProjectBrief,
+  ToolOverlap, ProjectBrief, PriorityNote, MemberDepartment,
 } from '@/lib/types';
 
 // ---------- Auth / Org Helpers ----------
@@ -329,6 +329,8 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
   const allPriorities = await getAllPrioritiesForOrg(orgId);
 
   const ranked: RankedOpportunity[] = allPriorities.map((p) => {
+    const status = p.status || 'not_started';
+    // Phase 1 dual-write: keep milestone fields for backward compat
     const milestoneStage = p.milestone?.stage ?? 0;
     const milestoneName = MILESTONE_STAGES[milestoneStage]?.name ?? 'Not Started';
     const parsedTimeSavings = parseTimeSavings(p.estimated_time_savings);
@@ -343,6 +345,7 @@ export async function getTopWins(orgId: string, n: number): Promise<RankedOpport
       effort: p.effort,
       estimatedTimeSavings: p.estimated_time_savings,
       parsedTimeSavings,
+      status,
       milestoneStage,
       milestoneName,
       score: computeScore(parsedTimeSavings.valid ? parsedTimeSavings.midpoint : 0, p.effort),
@@ -376,10 +379,29 @@ export async function getOpportunitiesByMilestone(orgId: string): Promise<Record
   return grouped;
 }
 
+export async function getOpportunitiesByStatus(orgId: string): Promise<Record<string, RankedOpportunity[]>> {
+  const all = await getTopWins(orgId, 1000);
+  const grouped: Record<string, RankedOpportunity[]> = {
+    not_started: [], in_progress: [], complete: [], proposed: [],
+  };
+  for (const opp of all) {
+    if (opp.status === 'rejected') continue; // hide rejected
+    (grouped[opp.status] ??= []).push(opp);
+  }
+  return grouped;
+}
+
 export async function getCompanyOverview(orgId: string): Promise<CompanyOverview> {
   const all = await getTopWins(orgId, 1000);
   const departments = await getDepartments(orgId);
 
+  // Status-based bucketing (primary)
+  const byStatus: Record<string, number> = {};
+  for (const opp of all) {
+    byStatus[opp.status] = (byStatus[opp.status] ?? 0) + 1;
+  }
+
+  // Legacy milestone bucketing (Phase 1 dual-write compat)
   const byMilestoneStage: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
   for (const opp of all) {
     byMilestoneStage[opp.milestoneStage] = (byMilestoneStage[opp.milestoneStage] ?? 0) + 1;
@@ -387,9 +409,9 @@ export async function getCompanyOverview(orgId: string): Promise<CompanyOverview
 
   const deptSummaries: DepartmentSummary[] = departments.map((dept) => {
     const deptOpps = all.filter((o) => o.departmentSlug === dept.slug);
-    const completed = deptOpps.filter((o) => o.milestoneStage === 3).length;
-    const inProgress = deptOpps.filter((o) => o.milestoneStage > 0 && o.milestoneStage < 3).length;
-    const notStarted = deptOpps.filter((o) => o.milestoneStage === 0).length;
+    const completed = deptOpps.filter((o) => o.status === 'complete').length;
+    const inProgress = deptOpps.filter((o) => o.status === 'in_progress').length;
+    const notStarted = deptOpps.filter((o) => o.status === 'not_started' || o.status === 'approved').length;
     const total = deptOpps.length;
     return {
       slug: dept.slug,
@@ -402,10 +424,11 @@ export async function getCompanyOverview(orgId: string): Promise<CompanyOverview
     };
   });
 
-  const totalCompleted = all.filter((o) => o.milestoneStage === 3).length;
+  const totalCompleted = all.filter((o) => o.status === 'complete').length;
 
   return {
     totalOpportunities: all.length,
+    byStatus,
     byMilestoneStage,
     totalCompleted,
     departments: deptSummaries,
@@ -427,7 +450,8 @@ export async function getTimeSavingsRollup(orgId: string): Promise<TimeSavingsRo
     for (const opp of deptOpps) {
       if (opp.parsedTimeSavings.valid) {
         potential += opp.parsedTimeSavings.midpoint;
-        if (opp.milestoneStage >= 1) realized += opp.parsedTimeSavings.midpoint;
+        // Realized = in_progress or complete (not proposed/approved/not_started)
+        if (opp.status === 'in_progress' || opp.status === 'complete') realized += opp.parsedTimeSavings.midpoint;
       }
     }
     totalPotential += potential;
@@ -646,4 +670,48 @@ export async function getAveragePriorityCount(orgId: string): Promise<number> {
 
   const allPriorities = await getAllPrioritiesForOrg(orgId);
   return Math.round((allPriorities.length / departments.length) * 10) / 10;
+}
+
+// ---------- Priority Notes ----------
+
+export async function getPriorityNotes(priorityId: string): Promise<PriorityNote[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('priority_notes')
+    .select('*')
+    .eq('priority_id', priorityId)
+    .order('created_at', { ascending: false });
+  return data ?? [];
+}
+
+// ---------- Member Departments ----------
+
+export async function getUserDepartments(userId: string, orgId: string): Promise<MemberDepartment[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('member_departments')
+    .select('*, department:departments!inner(org_id)')
+    .eq('user_id', userId)
+    .eq('department.org_id', orgId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data ?? []).map((d: any) => ({
+    id: d.id,
+    user_id: d.user_id,
+    department_id: d.department_id,
+    created_by: d.created_by,
+    created_at: d.created_at,
+  }));
+}
+
+/** Check if a user is linked to a specific department */
+export async function isUserLinkedToDepartment(userId: string, departmentId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('member_departments')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('department_id', departmentId)
+    .limit(1)
+    .single();
+  return !!data;
 }

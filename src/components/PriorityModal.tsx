@@ -98,8 +98,17 @@ export default function PriorityModal({ opportunity, onClose }: PriorityModalPro
           <div className="flex flex-wrap gap-2">
             <Badge label="Effort" value={opp.effort} colorMap={effortColors} />
             <Badge label="Complexity" value={opp.complexity} colorMap={complexityColors} />
-            <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-md border bg-emerald-100 text-emerald-700 border-emerald-200">
-              M{opp.milestoneStage}: {opp.milestoneName}
+            <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-md border ${
+              opp.status === 'complete' ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+              : opp.status === 'in_progress' ? 'bg-amber-100 text-amber-700 border-amber-200'
+              : opp.status === 'proposed' ? 'bg-purple-100 text-purple-700 border-purple-200'
+              : 'bg-slate-100 text-slate-500 border-slate-200'
+            }`}>
+              {opp.status === 'complete' ? 'Completed'
+              : opp.status === 'in_progress' ? 'In Progress'
+              : opp.status === 'proposed' ? 'Proposed'
+              : opp.status === 'not_started' ? 'Not Started'
+              : opp.status}
             </span>
           </div>
 

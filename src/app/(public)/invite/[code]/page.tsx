@@ -35,5 +35,15 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
   await serviceSupabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: invite.role ?? 'member' });
   await serviceSupabase.from('invites').update({ use_count: invite.use_count + 1 }).eq('id', invite.id);
 
+  // Link pre-assigned departments if any
+  if (invite.department_ids && Array.isArray(invite.department_ids) && invite.department_ids.length > 0) {
+    await serviceSupabase.rpc('link_departments_for_invite', {
+      p_user_id: user.id,
+      p_department_ids: invite.department_ids,
+      p_org_id: invite.org_id,
+      p_invite_id: invite.id,
+    });
+  }
+
   redirect(`/org/${invite.organization.slug}/dashboard`);
 }

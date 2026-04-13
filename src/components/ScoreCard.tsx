@@ -1,10 +1,7 @@
-import type { MilestoneConfig } from '@/lib/types';
-
 interface ScoreCardProps {
   totalOpportunities: number;
-  byMilestoneStage: Record<number, number>;
+  byStatus: Record<string, number>;
   totalCompleted: number;
-  milestones: MilestoneConfig[];
 }
 
 function StatCard({ label, value }: { label: string; value: number }) {
@@ -18,21 +15,16 @@ function StatCard({ label, value }: { label: string; value: number }) {
 
 export default function ScoreCard({
   totalOpportunities,
-  byMilestoneStage,
+  byStatus,
   totalCompleted,
-  milestones,
 }: ScoreCardProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       <StatCard label="Total Opportunities" value={totalOpportunities} />
-      {milestones.map((m) => (
-        <StatCard
-          key={m.id}
-          label={m.name}
-          value={byMilestoneStage[m.id] ?? 0}
-        />
-      ))}
+      <StatCard label="Not Started" value={byStatus['not_started'] ?? 0} />
+      <StatCard label="In Progress" value={byStatus['in_progress'] ?? 0} />
       <StatCard label="Completed" value={totalCompleted} />
+      <StatCard label="Proposed" value={byStatus['proposed'] ?? 0} />
     </div>
   );
 }
