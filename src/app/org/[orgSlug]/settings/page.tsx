@@ -24,6 +24,16 @@ export default async function SettingsPage({ params }: { params: Promise<{ orgSl
     getDepartments(org.id),
   ]);
 
+  // Build member → department mapping
+  const { data: mdRows } = await supabase
+    .from('member_departments')
+    .select('user_id, department_id, department:departments!inner(org_id)')
+    .eq('department.org_id', org.id);
+  const memberDepartments: Record<string, string[]> = {};
+  for (const row of mdRows ?? []) {
+    (memberDepartments[row.user_id] ??= []).push(row.department_id);
+  }
+
   return (
     <div className="space-y-10 max-w-2xl">
       <div>
@@ -38,6 +48,8 @@ export default async function SettingsPage({ params }: { params: Promise<{ orgSl
           currentUserId={user.id}
           currentUserRole={role}
           orgId={org.id}
+          departments={departments.map((d) => ({ id: d.id, name: d.name }))}
+          memberDepartments={memberDepartments}
         />
       </div>
 
