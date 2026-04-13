@@ -15,6 +15,7 @@ ALTER TABLE priorities
 -- ============================================================
 -- 2. Drop bridge trigger (status is now the source of truth)
 -- ============================================================
+DROP TRIGGER IF EXISTS trg_bridge_milestone_to_status ON milestones;
 DROP TRIGGER IF EXISTS bridge_milestone_to_status ON milestones;
 DROP FUNCTION IF EXISTS bridge_milestone_to_status();
 
