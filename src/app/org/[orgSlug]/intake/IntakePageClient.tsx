@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import IntakeSidebar, { type IntakeFeature } from './IntakeSidebar';
 import UpdateMissingData from './UpdateMissingData';
 import XRayInterview from './XRayInterview';
@@ -25,8 +25,23 @@ const FEATURE_LABELS: Record<IntakeFeature, string> = {
 };
 
 export default function IntakePageClient({ departments, orgSlug, orgId }: IntakePageClientProps) {
+  const featureKey = `intake_feature_${orgId}`;
   const [activeFeature, setActiveFeature] = useState<IntakeFeature | null>(null);
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
+
+  // Restore active feature from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(featureKey);
+    if (stored === 'xray' || stored === 'missing' || stored === 'new-priorities') {
+      setActiveFeature(stored);
+    }
+  }, [featureKey]);
+
+  // Persist active feature to localStorage on change
+  const handleFeatureSelect = useCallback((feature: IntakeFeature) => {
+    setActiveFeature(feature);
+    localStorage.setItem(featureKey, feature);
+  }, [featureKey]);
 
   const selectedDept = departments.find((d) => d.id === selectedDeptId);
 
@@ -41,8 +56,8 @@ export default function IntakePageClient({ departments, orgSlug, orgId }: Intake
 
   const handleNewDepartment = useCallback(() => {
     // Future: open new department creation flow
-    setActiveFeature('xray');
-  }, []);
+    handleFeatureSelect('xray');
+  }, [handleFeatureSelect]);
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-7rem)] -mx-4 -my-8">
@@ -51,7 +66,7 @@ export default function IntakePageClient({ departments, orgSlug, orgId }: Intake
         orgSlug={orgSlug}
         orgId={orgId}
         activeFeature={activeFeature}
-        onFeatureSelect={setActiveFeature}
+        onFeatureSelect={handleFeatureSelect}
         onDepartmentChange={handleDepartmentChange}
         onDepartmentSwitch={handleDepartmentSwitch}
         onNewDepartment={handleNewDepartment}
@@ -91,7 +106,7 @@ export default function IntakePageClient({ departments, orgSlug, orgId }: Intake
                   departmentId={selectedDept.id}
                   orgSlug={orgSlug}
                   orgId={orgId}
-                  onSwitchFeature={(feature) => setActiveFeature(feature as IntakeFeature)}
+                  onSwitchFeature={(feature) => handleFeatureSelect(feature as IntakeFeature)}
                 />
               ) : (
                 /* Placeholder content area — will be replaced by remaining units */
