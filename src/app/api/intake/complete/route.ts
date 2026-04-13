@@ -30,12 +30,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { orgId, extractedData, conversationId, departmentName, mode } = body as {
+  const { orgId, extractedData, conversationId, departmentName, mode, departmentId } = body as {
     orgId: string;
     extractedData?: Record<string, unknown>;
     conversationId?: string;
     departmentName: string;
     mode?: ApplyExtractionMode;
+    departmentId?: string;
   };
 
   if (!orgId || !departmentName) {
@@ -69,6 +70,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // For append mode with an explicit departmentId (e.g., file-import where the LLM
+    // determines the target department), link the conversation first so apply_extraction
+    // can read department_id from it.
+    if (mode === 'append' && departmentId && conversationId) {
+      await admin
+        .from('conversations')
+        .update({ department_id: departmentId })
+        .eq('id', conversationId);
+    }
+
     const result = await applyExtraction(orgId, extractedData, conversationId, mode);
     const deptId = result.department_id;
 

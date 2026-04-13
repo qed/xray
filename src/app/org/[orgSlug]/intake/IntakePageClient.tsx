@@ -5,6 +5,7 @@ import IntakeSidebar, { type IntakeFeature } from './IntakeSidebar';
 import UpdateMissingData from './UpdateMissingData';
 import XRayInterview from './XRayInterview';
 import AddNewPriorities from './AddNewPriorities';
+import FileImportIntake from './FileImportIntake';
 
 interface Department {
   id: string;
@@ -22,6 +23,7 @@ const FEATURE_LABELS: Record<IntakeFeature, string> = {
   xray: 'Initial Department X-Ray',
   missing: 'Update Missing Data',
   'new-priorities': 'Add New AI Priorities',
+  'file-import': 'Import Files',
 };
 
 export default function IntakePageClient({ departments, orgSlug, orgId }: IntakePageClientProps) {
@@ -32,7 +34,7 @@ export default function IntakePageClient({ departments, orgSlug, orgId }: Intake
   // Restore active feature from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(featureKey);
-    if (stored === 'xray' || stored === 'missing' || stored === 'new-priorities') {
+    if (stored === 'xray' || stored === 'missing' || stored === 'new-priorities' || stored === 'file-import') {
       setActiveFeature(stored);
     }
   }, [featureKey]);
@@ -78,6 +80,12 @@ export default function IntakePageClient({ departments, orgSlug, orgId }: Intake
           /* X-Ray interview takes over the full content area */
           <XRayInterview
             departmentId={selectedDeptId}
+            orgId={orgId}
+            orgSlug={orgSlug}
+          />
+        ) : activeFeature === 'file-import' ? (
+          /* File import takes over the full content area — no department required */
+          <FileImportIntake
             orgId={orgId}
             orgSlug={orgSlug}
           />

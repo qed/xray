@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getUserRole } from '@/lib/db';
-import { INTAKE_SYSTEM_PROMPT, GAP_FILL_SYSTEM_PROMPT, NEW_PRIORITIES_SYSTEM_PROMPT } from '@/lib/prompts';
+import { INTAKE_SYSTEM_PROMPT, GAP_FILL_SYSTEM_PROMPT, NEW_PRIORITIES_SYSTEM_PROMPT, FILE_IMPORT_SYSTEM_PROMPT } from '@/lib/prompts';
 import {
   PHASE_TITLES,
   PHASE_TOPICS,
@@ -211,6 +211,8 @@ export async function POST(req: NextRequest) {
     basePrompt = GAP_FILL_SYSTEM_PROMPT;
   } else if (mode === 'new-priorities') {
     basePrompt = NEW_PRIORITIES_SYSTEM_PROMPT;
+  } else if (mode === 'file-import') {
+    basePrompt = FILE_IMPORT_SYSTEM_PROMPT;
   } else {
     basePrompt = INTAKE_SYSTEM_PROMPT;
   }
