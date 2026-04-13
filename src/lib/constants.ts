@@ -69,7 +69,7 @@ export function getColorPalette(colorIndex: number | null | undefined): ColorPal
   return DEPARTMENT_COLOR_PALETTES[colorIndex];
 }
 
-// ---------- Milestone Stages ----------
+// ---------- Milestone Stages (legacy, Phase 1 dual-write) ----------
 
 export const MILESTONE_STAGES = [
   { stage: 0, name: 'Not Started' },
@@ -77,6 +77,29 @@ export const MILESTONE_STAGES = [
   { stage: 2, name: '2 Weeks Stable' },
   { stage: 3, name: 'Dept Head Confirmed' },
 ] as const;
+
+// ---------- Priority Statuses ----------
+
+export type PriorityStatus = 'proposed' | 'approved' | 'rejected' | 'not_started' | 'in_progress' | 'complete';
+
+export const PRIORITY_STATUSES: { value: PriorityStatus; label: string }[] = [
+  { value: 'proposed', label: 'Proposed' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'not_started', label: 'Not Started' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'complete', label: 'Complete' },
+];
+
+// Forward-only transitions: key = current status, value = allowed next statuses
+export const STATUS_TRANSITIONS: Record<PriorityStatus, PriorityStatus[]> = {
+  proposed: ['approved', 'rejected'],
+  approved: ['not_started'],           // transient gate → auto-transitions
+  rejected: [],                         // terminal
+  not_started: ['in_progress'],
+  in_progress: ['complete'],
+  complete: [],                         // terminal
+};
 
 export const EFFORT_SCORES: Record<string, number> = {
   Low: 3,

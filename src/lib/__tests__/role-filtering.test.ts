@@ -51,10 +51,18 @@ describe('API role checks', () => {
     expect(ownerOnlyCheck(null)).toBe(false);
   });
 
-  it('priorities route: only owner allowed', () => {
+  it('priorities route: owner or linked member/admin allowed', () => {
+    // Owner always allowed
     expect(ownerOnlyCheck('owner')).toBe(true);
-    expect(ownerOnlyCheck('admin')).toBe(false);
-    expect(ownerOnlyCheck('member')).toBe(false);
+    // Non-owners need department link check (tested separately)
+    // The route now uses: owner OR isUserLinkedToDepartment()
+    const linkedMemberCheck = (role: string | null, isLinked: boolean) =>
+      role === 'owner' || (!!role && isLinked);
+    expect(linkedMemberCheck('member', true)).toBe(true);
+    expect(linkedMemberCheck('member', false)).toBe(false);
+    expect(linkedMemberCheck('admin', true)).toBe(true);
+    expect(linkedMemberCheck('admin', false)).toBe(false);
+    expect(linkedMemberCheck(null, true)).toBe(false);
   });
 
   it('invite route: owner and admin allowed', () => {
