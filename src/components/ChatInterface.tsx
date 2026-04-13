@@ -55,7 +55,7 @@ interface Extraction {
 
 interface ChatInterfaceProps {
   orgId: string;
-  mode: 'intake' | 'gap-fill' | 'new-priorities';
+  mode: 'intake' | 'gap-fill' | 'new-priorities' | 'file-import';
   context?: { summary: string };
   existingConversationId?: string;
   existingMessages?: Message[];
