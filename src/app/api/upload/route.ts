@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       // Delete existing priorities for this department
       await supabase.from('priorities').delete().eq('department_id', dept.id);
 
-      // Insert new priorities
+      // Insert new priorities with status='proposed'
       if (priorities.length > 0) {
         const { data: insertedPriorities } = await supabase
           .from('priorities')
@@ -142,12 +142,12 @@ export async function POST(request: NextRequest) {
               suggested_approach: p.suggestedApproach,
               success_criteria: p.successCriteria,
               dependencies: p.dependencies,
-              status: p.status,
+              status: 'proposed',
             }))
           )
           .select();
 
-        // Create milestone entries for each priority
+        // Phase 1 dual-write: still create milestones for compatibility
         if (insertedPriorities) {
           await supabase.from('milestones').insert(
             insertedPriorities.map((p) => ({
