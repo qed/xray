@@ -282,13 +282,63 @@ export default function ChatInterface({
     }
   }
 
-  // Strip extraction tags from displayed content
+  // Strip extraction tags from displayed content (complete AND incomplete during streaming)
   function displayContent(content: string) {
     return content
       .replace(/<extraction>[\s\S]*?<\/extraction>/g, '')
+      .replace(/<extraction>[\s\S]*$/g, '') // incomplete tag during streaming
       .replace(/<phase>[\s\S]*?<\/phase>/g, '')
+      .replace(/<phase>[\s\S]*$/g, '')
       .replace(/<topic>[\s\S]*?<\/topic>/g, '')
+      .replace(/<topic>[\s\S]*$/g, '')
       .trim();
+  }
+
+  // Estimate extraction progress from streaming content
+  function getExtractionProgress(content: string): { active: boolean; percent: number; label: string } {
+    const extractionStart = content.indexOf('<extraction>');
+    if (extractionStart === -1) return { active: false, percent: 0, label: '' };
+    if (content.includes('</extraction>')) return { active: false, percent: 100, label: 'Complete' };
+
+    const extractionContent = content.slice(extractionStart);
+
+    // Profile milestones (0-40%)
+    const profileMarkers = [
+      { key: '"profile"', pct: 5, label: 'Building department profile...' },
+      { key: '"mission"', pct: 10, label: 'Building department profile...' },
+      { key: '"scope"', pct: 15, label: 'Building department profile...' },
+      { key: '"teamMembers"', pct: 20, label: 'Mapping team members...' },
+      { key: '"tools"', pct: 25, label: 'Cataloging tools...' },
+      { key: '"singlePointsOfFailure"', pct: 30, label: 'Identifying risks...' },
+      { key: '"painPoints"', pct: 35, label: 'Documenting pain points...' },
+      { key: '"tribalKnowledgeRisks"', pct: 40, label: 'Capturing tribal knowledge...' },
+    ];
+
+    let percent = 2; // extraction tag detected
+    let label = 'Preparing extraction...';
+
+    for (const marker of profileMarkers) {
+      if (extractionContent.includes(marker.key)) {
+        percent = marker.pct;
+        label = marker.label;
+      }
+    }
+
+    // Priority milestones (45-95%)
+    if (extractionContent.includes('"priorities"')) {
+      const rankMatches = extractionContent.match(/"rank"\s*:/g);
+      const rankCount = rankMatches ? rankMatches.length : 0;
+      if (rankCount === 0) {
+        percent = 45;
+        label = 'Mapping automation priorities...';
+      } else {
+        // Each priority adds ~5%, capped at 95%
+        percent = Math.min(45 + rankCount * 5, 95);
+        label = `Mapping priority ${rankCount}...`;
+      }
+    }
+
+    return { active: true, percent, label };
   }
 
   return (
@@ -321,13 +371,42 @@ export default function ChatInterface({
             ) : (
               <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-slate-100 text-slate-900 prose prose-sm prose-slate max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0 prose-pre:bg-slate-200 prose-pre:text-slate-800 prose-code:text-emerald-700 prose-code:before:content-none prose-code:after:content-none prose-table:my-2">
                 <div className="overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-200 [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-1.5 [&_td]:text-xs [&_tr:nth-child(even)]:bg-slate-50">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {displayContent(msg.content)}
-                  </ReactMarkdown>
+                  {(() => {
+                    const displayed = displayContent(msg.content);
+                    if (!displayed && streaming && i === messages.length - 1) return null;
+                    return (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {displayed}
+                      </ReactMarkdown>
+                    );
+                  })()}
                 </div>
-                {streaming && i === messages.length - 1 && (
-                  <span className="inline-block w-1.5 h-4 bg-slate-400 animate-pulse ml-0.5 align-middle" />
-                )}
+                {streaming && i === messages.length - 1 && (() => {
+                  const progress = getExtractionProgress(msg.content);
+                  if (progress.active) {
+                    return (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <svg className="w-4 h-4 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          <span>{progress.label}</span>
+                          <span className="ml-auto font-medium text-emerald-600">{progress.percent}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${progress.percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <span className="inline-block w-1.5 h-4 bg-slate-400 animate-pulse ml-0.5 align-middle" />
+                  );
+                })()}
               </div>
             )}
           </div>
