@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import type { DbDepartment, DbPriority } from '@/lib/types';
+import ApprovalBanner from './ApprovalBanner';
+import PriorityRow from './PriorityRow';
 
 interface DeptData {
   department: DbDepartment;
@@ -22,14 +24,6 @@ interface Props {
   orgSlug: string;
   role: string;
 }
-
-const STATUS_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  proposed: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Needs Review' },
-  not_started: { bg: 'bg-slate-100', text: 'text-slate-500', label: 'Not Started' },
-  in_progress: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'In Progress' },
-  complete: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Completed' },
-  rejected: { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejected' },
-};
 
 export default function TeamView({ departments, orgSlug, role }: Props) {
   const storageKey = `team_dept_${orgSlug}`;
@@ -144,6 +138,11 @@ export default function TeamView({ departments, orgSlug, role }: Props) {
         </div>
       )}
 
+      {/* Approval banner */}
+      <ApprovalBanner
+        proposedIds={priorities.filter((p) => p.status === 'proposed').map((p) => p.id)}
+      />
+
       {/* Priorities */}
       {visiblePriorities.length > 0 ? (
         <div>
@@ -152,38 +151,9 @@ export default function TeamView({ departments, orgSlug, role }: Props) {
             <span className="text-sm font-normal text-slate-400 ml-2">{visiblePriorities.length} total</span>
           </h2>
           <div className="space-y-3">
-            {visiblePriorities.map((p) => {
-              const badge = STATUS_BADGE[p.status] ?? STATUS_BADGE.not_started;
-              return (
-                <div key={p.id} className="bg-white border border-slate-200 rounded-xl p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0">
-                        {p.rank}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{p.name}</p>
-                        {p.what_to_automate && (
-                          <p className="text-xs text-slate-500 mt-0.5">{p.what_to_automate}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-semibold text-emerald-600">{p.estimated_time_savings}</p>
-                      <div className="flex gap-2 mt-0.5">
-                        <span className="text-[10px] text-slate-400">Effort: {p.effort || '—'}</span>
-                        <span className="text-[10px] text-slate-400">Complexity: {p.complexity || '—'}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-2 ml-9">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.bg} ${badge.text}`}>
-                      {badge.label}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {visiblePriorities.map((p) => (
+              <PriorityRow key={p.id} priority={p} role={role} />
+            ))}
           </div>
         </div>
       ) : (
