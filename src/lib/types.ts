@@ -217,6 +217,7 @@ export interface DbDepartment {
   single_points_of_failure: string[];
   pain_points: string[];
   tribal_knowledge_risks: string[];
+  color_index: number | null;
 }
 
 export interface DbTeamMember {
@@ -227,11 +228,43 @@ export interface DbTeamMember {
   responsibilities: string;
 }
 
+export interface ReportingStatCard {
+  label: string;
+  value: string;
+  subtitle: string;
+}
+
+export interface ReportingChart {
+  id: string;
+  title: string;
+  type: 'line' | 'bar' | 'doughnut' | 'stacked-bar' | 'horizontal-bar' | 'multi-line';
+  data: {
+    labels: string[];
+    datasets: { label: string; data: number[] }[];
+  };
+}
+
+export interface ReportingTable {
+  columns: string[];
+  rows: string[][];
+  badges?: Record<number, Record<string, 'success' | 'warning' | 'danger'>>;
+}
+
+export interface ReportingData {
+  layout: 'standard' | 'table-first' | 'chart-heavy' | 'full-width';
+  is_placeholder: boolean;
+  stat_cards: ReportingStatCard[];
+  summary: string;
+  charts: ReportingChart[];
+  table: ReportingTable;
+}
+
 export interface DbPriority {
   id: string;
   department_id: string;
   rank: number;
   name: string;
+  slug: string;
   effort: string;
   complexity: string;
   what_to_automate: string;
@@ -242,6 +275,7 @@ export interface DbPriority {
   success_criteria: string;
   dependencies: string[];
   status: string;
+  reporting_data: ReportingData | null;
   // Phase 8 fields (value dimensions)
   frequency?: string;
   hands_on_time?: string;

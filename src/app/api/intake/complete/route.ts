@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { applyExtraction, ApplyExtractionMode } from '@/lib/apply-extraction';
+import { generatePlaceholderReporting } from '@/lib/reporting';
+import type { DbPriority } from '@/lib/types';
 
 /**
  * Slugify a department name the same way the Postgres function does:
@@ -68,9 +70,100 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await applyExtraction(orgId, extractedData, conversationId, mode);
-    return NextResponse.json({ success: true, departmentId: result.department_id });
+    const deptId = result.department_id;
+
+    // Post-process: fill in slugs and reporting_data for new priorities
+    if (deptId) {
+      await backfillSlugsAndReporting(admin, deptId);
+      await backfillDepartmentColorIndex(admin, orgId, deptId);
+    }
+
+    return NextResponse.json({ success: true, departmentId: deptId });
   } catch (err) {
     console.error('intake/complete error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
+}
+
+// ---------- Post-processing helpers ----------
+
+/**
+ * Fill in slug and reporting_data for any priorities in this department
+ * that are missing them (i.e., just created by apply_extraction).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function backfillSlugsAndReporting(admin: any, departmentId: string) {
+  // Get priorities missing slug or reporting_data
+  const { data: priorities } = await admin
+    .from('priorities')
+    .select('*')
+    .eq('department_id', departmentId)
+    .order('rank');
+
+  if (!priorities?.length) return;
+
+  // Collect existing slugs for collision detection
+  const existingSlugs = new Set(
+    priorities.filter((p: DbPriority) => p.slug).map((p: DbPriority) => p.slug)
+  );
+
+  for (const p of priorities as DbPriority[]) {
+    const updates: Record<string, unknown> = {};
+
+    // Generate slug if missing
+    if (!p.slug) {
+      let baseSlug = slugify(p.name).slice(0, 80);
+      let candidate = baseSlug;
+      let counter = 1;
+      while (existingSlugs.has(candidate)) {
+        counter++;
+        candidate = `${baseSlug}-${counter}`;
+      }
+      existingSlugs.add(candidate);
+      updates.slug = candidate;
+    }
+
+    // Generate reporting_data if missing
+    if (!p.reporting_data) {
+      const priorityWithSlug = { ...p, slug: (updates.slug as string) ?? p.slug };
+      updates.reporting_data = generatePlaceholderReporting(priorityWithSlug);
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await admin
+        .from('priorities')
+        .update(updates)
+        .eq('id', p.id);
+    }
+  }
+}
+
+/**
+ * Assign a color_index to a department if it doesn't have one yet.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function backfillDepartmentColorIndex(admin: any, orgId: string, departmentId: string) {
+  const { data: dept } = await admin
+    .from('departments')
+    .select('color_index')
+    .eq('id', departmentId)
+    .single();
+
+  if (dept?.color_index != null) return;
+
+  // Find the next available color_index for this org
+  const { data: existingDepts } = await admin
+    .from('departments')
+    .select('color_index')
+    .eq('org_id', orgId)
+    .not('color_index', 'is', null)
+    .order('color_index', { ascending: false })
+    .limit(1);
+
+  const nextIndex = existingDepts?.length ? (existingDepts[0].color_index + 1) : 0;
+
+  await admin
+    .from('departments')
+    .update({ color_index: nextIndex })
+    .eq('id', departmentId);
 }

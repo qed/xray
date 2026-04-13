@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
           .limit(1);
         if (memberships?.length && memberships[0].organizations) {
           const org = memberships[0].organizations as unknown as { slug: string };
-          return NextResponse.redirect(new URL(`/org/${org.slug}/priorities`, request.url), {
+          return NextResponse.redirect(new URL(`/org/${org.slug}/dashboard`, request.url), {
             headers: response.headers,
           });
         }

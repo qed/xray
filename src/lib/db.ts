@@ -161,6 +161,21 @@ export async function getPriorities(departmentId: string): Promise<(DbPriority &
   });
 }
 
+export async function getPriorityBySlug(departmentId: string, slug: string): Promise<(DbPriority & { milestone_stage: number }) | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('priorities')
+    .select('*, milestone:milestones(*)')
+    .eq('department_id', departmentId)
+    .eq('slug', slug)
+    .single();
+  if (!data) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p = data as any;
+  const m = Array.isArray(p.milestone) ? p.milestone[0] : p.milestone;
+  return { ...p, milestone_stage: m?.stage ?? 0 };
+}
+
 export async function getAllPrioritiesForOrg(orgId: string) {
   const supabase = await createClient();
   const { data } = await supabase

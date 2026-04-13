@@ -63,7 +63,7 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
           .limit(1);
         if (memberships?.length && memberships[0].organizations) {
           const org = memberships[0].organizations as unknown as { slug: string };
-          window.location.href = `/org/${org.slug}/priorities`;
+          window.location.href = `/org/${org.slug}/dashboard`;
           return;
         }
       }
