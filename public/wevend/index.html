@@ -501,7 +501,7 @@
             { value: String(deptStats.priorityCount), label: 'PRIORITIES', subtitle: 'In ' + escapeHTML(dept.name) },
             { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + deptStats.quantifiableCount + ' quantifiable' },
             { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities', click: 'In Progress', deptSlug: dept.slug },
-            { value: deptStats.topImpact, label: 'HIGHEST IMPACT LEVEL', subtitle: 'Across ' + deptStats.priorityCount + ' priorities' }
+            { value: String(deptStats.completedCount), label: 'COMPLETED', subtitle: 'Of ' + deptStats.priorityCount + ' priorities', click: 'Completed', deptSlug: dept.slug }
         ];
         html += '<div class="stat-card-grid">';
         for (var i = 0; i < statCards.length; i++) {
@@ -761,9 +761,12 @@
         };
 
         // Chart 2: Doughnut — status breakdown
+        var pctComplete = companyStats.totalPriorities > 0
+            ? Math.round((companyStats.statusCounts['Completed'] / companyStats.totalPriorities) * 100)
+            : 0;
         var statusChart = {
             id: 'cc-company-status-doughnut',
-            title: 'Status Breakdown',
+            title: 'Status Breakdown — ' + pctComplete + '% Completed',
             type: 'doughnut',
             data: {
                 labels: ['In Progress', 'Completed', 'Not Started'],
@@ -779,10 +782,13 @@
     }
 
     function buildDeptChartConfigs(deptStats, slug) {
-        // Chart 1: Doughnut — status breakdown
+        // Chart: Doughnut — status breakdown
+        var deptPctComplete = deptStats.priorityCount > 0
+            ? Math.round((deptStats.completedCount / deptStats.priorityCount) * 100)
+            : 0;
         var statusChart = {
             id: 'cc-dept-status-' + slug,
-            title: 'Status Breakdown',
+            title: 'Status Breakdown — ' + deptPctComplete + '% Completed',
             type: 'doughnut',
             data: {
                 labels: ['In Progress', 'Completed', 'Not Started'],
@@ -810,7 +816,7 @@
             }
         };
 
-        return [statusChart, impactChart];
+        return [impactChart, statusChart];
     }
 
     // --- Command Center State ---
@@ -1008,7 +1014,7 @@
             { value: String(deptStats.priorityCount), label: 'PRIORITIES', subtitle: 'In ' + escapeHTML(dept.name) },
             { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + deptStats.quantifiableCount + ' quantifiable' },
             { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities', click: 'In Progress', deptSlug: dept.slug },
-            { value: deptStats.topImpact, label: 'HIGHEST IMPACT LEVEL', subtitle: 'Across ' + deptStats.priorityCount + ' priorities' }
+            { value: String(deptStats.completedCount), label: 'COMPLETED', subtitle: 'Of ' + deptStats.priorityCount + ' priorities', click: 'Completed', deptSlug: dept.slug }
         ];
         html += '<div class="stat-card-grid">';
         for (var i = 0; i < statCards.length; i++) {
