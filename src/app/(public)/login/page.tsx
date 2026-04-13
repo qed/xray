@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import AuthForm from '@/components/AuthForm';
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ redirect?: string; invite?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ redirect?: string; invite?: string; error?: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect('/orgs');
@@ -13,6 +13,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold text-slate-900 text-center mb-6">Log In</h1>
+        {params.error === 'link_expired' && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+            <p className="text-sm text-amber-800">Your login link has expired or is invalid. Please try again.</p>
+          </div>
+        )}
         <AuthForm mode="login" inviteCode={params.invite} />
         <p className="text-center text-sm text-slate-500 mt-4">
           Don&apos;t have an account?{' '}
