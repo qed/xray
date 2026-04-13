@@ -47,7 +47,7 @@ const featureKey = `intake_feature_${orgId}`;
 // Restore on mount
 useEffect(() => {
   const stored = localStorage.getItem(featureKey);
-  if (stored === 'xray' || stored === 'missing' || stored === 'new-priorities') {
+  if (stored === 'xray' || stored === 'missing' || stored === 'new-priorities' || stored === 'file-import') {
     setActiveFeature(stored);
   }
 }, [featureKey]);
@@ -80,3 +80,4 @@ On reload, the restoration chain now works end-to-end:
 
 - `src/app/org/[orgSlug]/intake/IntakePageClient.tsx` — the fix
 - `src/app/org/[orgSlug]/intake/IntakeSidebar.tsx` — existing localStorage pattern for department selection
+- `docs/solutions/best-practices/file-import-intake-pattern-2026-04-13.md` — intake mode extension checklist (includes localStorage guard as step #8)
