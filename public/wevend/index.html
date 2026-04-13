@@ -361,7 +361,7 @@
         }
     }
 
-    window.addEventListener('hashchange', route);
+    window.addEventListener('hashchange', function() { closeDrilldown(); route(); });
     document.addEventListener('DOMContentLoaded', route);
 
     // --- Views ---
@@ -445,16 +445,17 @@
         var statCards = [
             { value: String(companyStats.totalPriorities), label: 'PRIORITIES', subtitle: 'Across ' + companyStats.totalDepts + ' departments' },
             { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + companyStats.quantifiableCount + ' quantifiable priorities' },
-            { value: String(companyStats.statusCounts['In Progress']), label: 'ACTIVELY IN PROGRESS', subtitle: 'Of ' + companyStats.totalPriorities + ' total' },
-            { value: String(companyStats.statusCounts['Completed']), label: 'COMPLETED', subtitle: 'Automation priorities' }
+            { value: String(companyStats.statusCounts['In Progress']), label: 'ACTIVELY IN PROGRESS', subtitle: 'Of ' + companyStats.totalPriorities + ' total', click: 'In Progress' },
+            { value: String(companyStats.statusCounts['Completed']), label: 'COMPLETED', subtitle: 'Automation priorities', click: 'Completed' }
         ];
         html += '<div class="stat-card-grid">';
         for (var i = 0; i < statCards.length; i++) {
             var sc = statCards[i];
-            html += '<div class="stat-card" style="border-top: 3px solid ' + accentColor + '">';
+            var clickAttr = sc.click ? ' clickable" onclick="showStatusDrilldown(\'' + sc.click + '\')"' : '"';
+            html += '<div class="stat-card' + clickAttr + ' style="border-top: 3px solid ' + accentColor + '">';
             html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
             html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
-            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + (sc.click ? ' &middot; Click to view' : '') + '</div>';
             html += '</div>';
         }
         html += '</div>';
@@ -499,16 +500,17 @@
         var statCards = [
             { value: String(deptStats.priorityCount), label: 'PRIORITIES', subtitle: 'In ' + escapeHTML(dept.name) },
             { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + deptStats.quantifiableCount + ' quantifiable' },
-            { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities' },
+            { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities', click: 'In Progress', deptSlug: dept.slug },
             { value: deptStats.topImpact, label: 'HIGHEST IMPACT LEVEL', subtitle: 'Across ' + deptStats.priorityCount + ' priorities' }
         ];
         html += '<div class="stat-card-grid">';
         for (var i = 0; i < statCards.length; i++) {
             var sc = statCards[i];
-            html += '<div class="stat-card" style="border-top: 3px solid ' + colors.primary + '">';
+            var clickAttr = sc.click ? ' clickable" onclick="showStatusDrilldown(\'' + sc.click + '\',\'' + escapeHTML(sc.deptSlug) + '\')"' : '"';
+            html += '<div class="stat-card' + clickAttr + ' style="border-top: 3px solid ' + colors.primary + '">';
             html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
             html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
-            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + (sc.click ? ' &middot; Click to view' : '') + '</div>';
             html += '</div>';
         }
         html += '</div>';
@@ -558,6 +560,76 @@
             }
         }
         return parts.join(', ');
+    }
+
+    // --- Status Drilldown Modal ---
+
+    function showStatusDrilldown(status, deptSlug) {
+        // Collect matching priorities
+        var items = [];
+        var depts = CSUITE_DATA.departments;
+        for (var d = 0; d < depts.length; d++) {
+            var dept = depts[d];
+            if (deptSlug && dept.slug !== deptSlug) continue;
+            var pris = dept.priorities || [];
+            for (var p = 0; p < pris.length; p++) {
+                if (pris[p].status === status) {
+                    items.push({ dept: dept, pri: pris[p] });
+                }
+            }
+        }
+
+        // Build modal HTML
+        var showDept = !deptSlug; // show department tags in company-wide view
+        var title = items.length + ' ' + status + ' Priorit' + (items.length === 1 ? 'y' : 'ies');
+        if (deptSlug) {
+            var d2 = findDepartment(deptSlug);
+            if (d2) title += ' — ' + d2.name;
+        }
+
+        var html = '<div class="drilldown-overlay" onclick="closeDrilldown(event)">';
+        html += '<div class="drilldown-modal" onclick="event.stopPropagation()">';
+        html += '<div class="drilldown-header">';
+        html += '<h2>' + escapeHTML(title) + '</h2>';
+        html += '<button class="drilldown-close" onclick="closeDrilldown()">&times;</button>';
+        html += '</div>';
+        html += '<div class="drilldown-body">';
+
+        if (items.length === 0) {
+            html += '<div style="text-align:center;color:#888;padding:32px 0;">No ' + escapeHTML(status.toLowerCase()) + ' priorities.</div>';
+        } else {
+            for (var i = 0; i < items.length; i++) {
+                var it = items[i];
+                var colors = getDeptColors(it.dept.slug);
+                html += '<div class="drilldown-item" onclick="window.location.hash=\'#/' + escapeHTML(it.dept.slug) + '/' + escapeHTML(it.pri.slug) + '\';closeDrilldown()">';
+                html += '<div class="drilldown-rank">#' + it.pri.rank + '</div>';
+                html += '<div class="drilldown-info">';
+                html += '<div class="drilldown-name">' + escapeHTML(it.pri.name) + '</div>';
+                html += '<div class="drilldown-meta">';
+                if (showDept) {
+                    html += '<span class="drilldown-dept-tag" style="background:' + colors.primary + '">' + escapeHTML(it.dept.name) + '</span>';
+                }
+                html += escapeHTML(it.pri.who || '\u2014') + ' &middot; ' + escapeHTML(it.pri.weekly_hours || '\u2014') + '/week';
+                html += ' &middot; ' + escapeHTML(it.pri.impact || '\u2014') + ' impact';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            }
+        }
+
+        html += '</div></div></div>';
+
+        // Inject modal
+        var el = document.createElement('div');
+        el.id = 'drilldown-container';
+        el.innerHTML = html;
+        document.body.appendChild(el);
+    }
+
+    function closeDrilldown(e) {
+        if (e && e.target && !e.target.classList.contains('drilldown-overlay')) return;
+        var el = document.getElementById('drilldown-container');
+        if (el) el.remove();
     }
 
     // --- Command Center Helpers ---
@@ -935,16 +1007,17 @@
         var statCards = [
             { value: String(deptStats.priorityCount), label: 'PRIORITIES', subtitle: 'In ' + escapeHTML(dept.name) },
             { value: '~' + hrs + ' hrs', label: 'EST. WEEKLY HOURS SAVED', subtitle: 'From ' + deptStats.quantifiableCount + ' quantifiable' },
-            { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities' },
+            { value: String(deptStats.activeCount), label: 'IN PROGRESS', subtitle: 'Of ' + deptStats.priorityCount + ' priorities', click: 'In Progress', deptSlug: dept.slug },
             { value: deptStats.topImpact, label: 'HIGHEST IMPACT LEVEL', subtitle: 'Across ' + deptStats.priorityCount + ' priorities' }
         ];
         html += '<div class="stat-card-grid">';
         for (var i = 0; i < statCards.length; i++) {
             var sc = statCards[i];
-            html += '<div class="stat-card" style="border-top: 3px solid ' + colors.primary + '">';
+            var clickAttr = sc.click ? ' clickable" onclick="showStatusDrilldown(\'' + sc.click + '\',\'' + escapeHTML(sc.deptSlug) + '\')"' : '"';
+            html += '<div class="stat-card' + clickAttr + ' style="border-top: 3px solid ' + colors.primary + '">';
             html += '<div class="stat-number">' + escapeHTML(sc.value) + '</div>';
             html += '<div class="stat-label">' + escapeHTML(sc.label) + '</div>';
-            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + '</div>';
+            html += '<div class="stat-subtitle">' + escapeHTML(sc.subtitle) + (sc.click ? ' &middot; Click to view' : '') + '</div>';
             html += '</div>';
         }
         html += '</div>';
