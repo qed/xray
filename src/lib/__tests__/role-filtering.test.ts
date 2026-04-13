@@ -10,7 +10,6 @@ const allNavLinks = [
   { href: '/org/test/dependencies', label: 'Dependencies', roles: ['owner'] },
   { href: '/org/test/tools', label: 'Tools', roles: ['owner'] },
   { href: '/org/test/briefs', label: 'Briefs', roles: ['owner', 'admin'] },
-  { href: '/org/test/upload', label: 'Upload', roles: ['owner'] },
 ];
 
 function filterNavLinks(role: string) {
@@ -18,9 +17,9 @@ function filterNavLinks(role: string) {
 }
 
 describe('Nav link role filtering', () => {
-  it('owner sees 8 links (all except My Team)', () => {
+  it('owner sees 7 links (all except My Team)', () => {
     const links = filterNavLinks('owner');
-    expect(links).toHaveLength(8);
+    expect(links).toHaveLength(7);
   });
 
   it('admin sees Dashboard, Intake, and Briefs', () => {

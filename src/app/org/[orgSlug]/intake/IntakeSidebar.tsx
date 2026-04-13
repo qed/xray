@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-export type IntakeFeature = 'xray' | 'missing' | 'new-priorities';
+export type IntakeFeature = 'xray' | 'missing' | 'new-priorities' | 'file-import';
 
 interface Department {
   id: string;
@@ -47,6 +47,12 @@ const FEATURES: { key: IntakeFeature; label: string; shortLabel: string; descrip
     label: 'Add New AI Priorities',
     shortLabel: 'New Priorities',
     description: 'Discover new automation priorities',
+  },
+  {
+    key: 'file-import',
+    label: 'Import Files',
+    shortLabel: 'Import',
+    description: 'Import departments or priorities from uploaded files',
   },
 ];
 

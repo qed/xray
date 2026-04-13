@@ -39,7 +39,6 @@ export default async function OrgLayout({
     { href: `${base}/dependencies`, label: 'Dependencies', roles: ['owner'] },
     { href: `${base}/tools`, label: 'Tools', roles: ['owner'] },
     { href: `${base}/briefs`, label: 'Briefs', roles: ['owner', 'admin'] },
-    { href: `${base}/upload`, label: 'Upload', roles: ['owner'] },
   ];
 
   const navLinks = allNavLinks.filter((link) => link.roles.includes(role));
