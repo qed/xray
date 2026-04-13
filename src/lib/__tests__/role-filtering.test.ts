@@ -2,13 +2,14 @@ import { describe, it, expect } from 'vitest';
 
 // Extracted nav link config matching layout.tsx
 const allNavLinks = [
-  { href: '/org/test/priorities', label: 'AI Priorities', roles: ['owner', 'admin'] },
-  { href: '/org/test/dashboard', label: 'Dashboard', roles: ['owner', 'admin'] },
+  { href: '/org/test/dashboard', label: 'Dashboard', roles: ['owner', 'admin', 'member'] },
+  { href: '/org/test/team', label: 'My Team', roles: ['member'] },
+  { href: '/org/test/intake', label: 'Intake', roles: ['owner', 'admin', 'member'] },
   { href: '/org/test/tracker', label: 'Tracker', roles: ['owner'] },
   { href: '/org/test/risks', label: 'Risks', roles: ['owner'] },
   { href: '/org/test/dependencies', label: 'Dependencies', roles: ['owner'] },
   { href: '/org/test/tools', label: 'Tools', roles: ['owner'] },
-  { href: '/org/test/unfiled', label: 'Missing Gaps', roles: ['owner'] },
+  { href: '/org/test/briefs', label: 'Briefs', roles: ['owner', 'admin'] },
   { href: '/org/test/upload', label: 'Upload', roles: ['owner'] },
 ];
 
@@ -17,20 +18,21 @@ function filterNavLinks(role: string) {
 }
 
 describe('Nav link role filtering', () => {
-  it('owner sees all 8 links', () => {
+  it('owner sees 8 links (all except My Team)', () => {
     const links = filterNavLinks('owner');
     expect(links).toHaveLength(8);
   });
 
-  it('admin sees only AI Priorities and Dashboard', () => {
+  it('admin sees Dashboard, Intake, and Briefs', () => {
     const links = filterNavLinks('admin');
-    expect(links).toHaveLength(2);
-    expect(links.map((l) => l.label)).toEqual(['AI Priorities', 'Dashboard']);
+    expect(links).toHaveLength(3);
+    expect(links.map((l) => l.label)).toEqual(['Dashboard', 'Intake', 'Briefs']);
   });
 
-  it('member sees no links', () => {
+  it('member sees Dashboard, My Team, and Intake', () => {
     const links = filterNavLinks('member');
-    expect(links).toHaveLength(0);
+    expect(links).toHaveLength(3);
+    expect(links.map((l) => l.label)).toEqual(['Dashboard', 'My Team', 'Intake']);
   });
 
   it('unknown role sees no links', () => {

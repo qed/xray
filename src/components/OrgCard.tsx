@@ -41,7 +41,7 @@ export default function OrgCard({ name, slug, role, departmentCount, priorityCou
 
   return (
     <div
-      onClick={() => router.push(`/org/${slug}/priorities`)}
+      onClick={() => router.push(`/org/${slug}/dashboard`)}
       className="bg-white border border-slate-200 rounded-xl p-5 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all"
     >
       <div className="flex items-center justify-between mb-3">

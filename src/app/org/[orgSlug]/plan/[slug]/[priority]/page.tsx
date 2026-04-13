@@ -49,8 +49,8 @@ export default async function PlanPage({ params }: { params: Promise<{ orgSlug: 
   return (
     <div className="space-y-8">
       <div className="text-sm text-slate-400">
-        <Link href={`/org/${orgSlug}/priorities`} className="hover:text-emerald-600 transition-colors">
-          AI Priorities
+        <Link href={`/org/${orgSlug}/dashboard`} className="hover:text-emerald-600 transition-colors">
+          Dashboard
         </Link>
         <span className="mx-2">/</span>
         <Link href={`/org/${orgSlug}/department/${slug}`} className="hover:text-emerald-600 transition-colors">

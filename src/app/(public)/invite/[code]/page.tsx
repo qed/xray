@@ -27,7 +27,7 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
   if (!invite) redirect('/join');
 
   const { data: existing } = await serviceSupabase.from('org_members').select('id').eq('org_id', invite.org_id).eq('user_id', user.id).single();
-  if (existing) redirect(`/org/${invite.organization.slug}/priorities`);
+  if (existing) redirect(`/org/${invite.organization.slug}/dashboard`);
 
   if (invite.expires_at && new Date(invite.expires_at) < new Date()) redirect('/join');
   if (invite.max_uses && invite.use_count >= invite.max_uses) redirect('/join');
@@ -35,5 +35,5 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
   await serviceSupabase.from('org_members').insert({ org_id: invite.org_id, user_id: user.id, role: invite.role ?? 'member' });
   await serviceSupabase.from('invites').update({ use_count: invite.use_count + 1 }).eq('id', invite.id);
 
-  redirect(`/org/${invite.organization.slug}/priorities`);
+  redirect(`/org/${invite.organization.slug}/dashboard`);
 }

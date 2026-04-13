@@ -14,7 +14,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ orgSlug
   if (!org) redirect('/join');
 
   const role = await getUserRole(org.id, user.id);
-  if (role !== 'owner') redirect(`/org/${orgSlug}/priorities`);
+  if (role !== 'owner') redirect(`/org/${orgSlug}/dashboard`);
 
   // Load pending extractions with their conversations
   const admin = createAdminClient();

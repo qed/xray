@@ -15,7 +15,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ orgSl
 
   const role = await getUserRole(org.id, user.id);
   if (!role || (role !== 'owner' && role !== 'admin')) {
-    redirect(`/org/${orgSlug}/priorities`);
+    redirect(`/org/${orgSlug}/dashboard`);
   }
 
   const members = await getOrgMembers(org.id);

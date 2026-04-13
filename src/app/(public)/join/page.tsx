@@ -47,7 +47,7 @@ export default function JoinPage() {
       const { error: rpcError } = await supabase.rpc('create_organization', { p_name: orgName, p_slug: slug });
       if (rpcError) { setError(rpcError.message.includes('duplicate') ? 'An organization with this name already exists' : rpcError.message); setLoading(false); return; }
 
-      router.push(`/org/${slug}/priorities`);
+      router.push(`/org/${slug}/dashboard`);
       router.refresh();
     } catch { setError('Failed to create organization'); setLoading(false); }
   }

@@ -339,10 +339,10 @@ export default function AddNewPriorities({ departmentId, orgId, orgSlug }: AddNe
               Add Another AI Priority
             </button>
             <button
-              onClick={() => router.push(`/org/${orgSlug}/priorities`)}
+              onClick={() => router.push(`/org/${orgSlug}/dashboard`)}
               className="px-5 py-2.5 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
             >
-              Back to AI Priorities
+              Back to Dashboard
             </button>
           </div>
         </div>
