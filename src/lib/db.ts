@@ -379,6 +379,18 @@ export async function getOpportunitiesByMilestone(orgId: string): Promise<Record
   return grouped;
 }
 
+export async function getOpportunitiesByStatus(orgId: string): Promise<Record<string, RankedOpportunity[]>> {
+  const all = await getTopWins(orgId, 1000);
+  const grouped: Record<string, RankedOpportunity[]> = {
+    not_started: [], in_progress: [], complete: [], proposed: [],
+  };
+  for (const opp of all) {
+    if (opp.status === 'rejected') continue; // hide rejected
+    (grouped[opp.status] ??= []).push(opp);
+  }
+  return grouped;
+}
+
 export async function getCompanyOverview(orgId: string): Promise<CompanyOverview> {
   const all = await getTopWins(orgId, 1000);
   const departments = await getDepartments(orgId);

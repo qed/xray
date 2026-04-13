@@ -88,7 +88,10 @@ export default function KanbanCard({ opportunity }: KanbanCardProps) {
             ← Back
           </button>
           <span className="text-[10px] text-slate-400">
-            {MILESTONE_STAGES[currentStage]?.name ?? 'Unknown'}
+            {opportunity.status === 'complete' ? 'Completed'
+            : opportunity.status === 'in_progress' ? 'In Progress'
+            : opportunity.status === 'not_started' ? 'Not Started'
+            : MILESTONE_STAGES[currentStage]?.name ?? 'Unknown'}
           </span>
           <button
             onClick={() => canAdvance && updateStage(currentStage + 1)}

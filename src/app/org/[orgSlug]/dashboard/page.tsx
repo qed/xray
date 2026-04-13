@@ -40,7 +40,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ orgS
       orgName={org.name}
       departments={departmentsWithPalettes}
       totalPriorities={overview.totalOpportunities}
-      totalInProgress={overview.byMilestoneStage[1] + overview.byMilestoneStage[2]}
+      totalInProgress={overview.byStatus['in_progress'] ?? 0}
       totalCompleted={overview.totalCompleted}
       totalHoursPerWeek={timeSavings.totalPotentialHoursPerWeek}
       quantifiableCount={quantifiableCount}

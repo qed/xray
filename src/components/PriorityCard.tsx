@@ -48,8 +48,17 @@ export default function PriorityCard({ opportunity }: PriorityCardProps) {
         <div className="flex flex-wrap gap-2 ml-10">
           <Badge label="Effort" value={opportunity.effort} colorMap={effortColors} />
           <Badge label="Complexity" value={opportunity.complexity} colorMap={complexityColors} />
-          <span className="inline-flex items-center text-xs px-2.5 py-1 rounded-md border bg-emerald-100 text-emerald-700 border-emerald-200">
-            M{opportunity.milestoneStage}: {opportunity.milestoneName}
+          <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-md border ${
+            opportunity.status === 'complete' ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+            : opportunity.status === 'in_progress' ? 'bg-amber-100 text-amber-700 border-amber-200'
+            : opportunity.status === 'proposed' ? 'bg-purple-100 text-purple-700 border-purple-200'
+            : 'bg-slate-100 text-slate-500 border-slate-200'
+          }`}>
+            {opportunity.status === 'complete' ? 'Completed'
+            : opportunity.status === 'in_progress' ? 'In Progress'
+            : opportunity.status === 'proposed' ? 'Proposed'
+            : opportunity.status === 'not_started' ? 'Not Started'
+            : opportunity.status}
           </span>
         </div>
       </div>
