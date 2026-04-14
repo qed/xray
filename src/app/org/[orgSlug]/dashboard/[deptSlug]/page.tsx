@@ -32,6 +32,7 @@ export default async function DepartmentDashboardPage({
     const reportingData = p.reporting_data ?? generatePlaceholderReporting(p);
 
     return {
+      id: p.id,
       slug: p.slug,
       rank: p.rank,
       name: p.name,

@@ -5,10 +5,12 @@ import Link from 'next/link';
 import PrioritySidebar, { type PrioritySidebarItem } from './PrioritySidebar';
 import StatCard from './StatCard';
 import DashboardChart from './DashboardChart';
+import StatusToggle from '../StatusToggle';
 import type { ReportingData } from '@/lib/types';
 import type { ColorPalette } from '@/lib/constants';
 
 interface PriorityData {
+  id: string;
   slug: string;
   rank: number;
   name: string;
@@ -183,6 +185,9 @@ function PrioritySummaryContent({
             </span>
           )}
         </h2>
+        <div className="mt-2">
+          <StatusToggle priorityId={priority.id} initialStatus={priority.status} />
+        </div>
       </div>
 
       {rpt ? (
