@@ -124,7 +124,7 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
       </div>
 
       {/* Two-panel layout — matches dashboard */}
-      <div className="flex gap-6">
+      <div className="flex gap-6 items-start">
         {/* Left sidebar — desktop only */}
         <div className="hidden md:block w-[260px] shrink-0">
           <DepartmentSidebar
@@ -134,12 +134,20 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
           />
         </div>
 
-        {/* Right panel — department membership */}
-        <div className="flex-1 min-w-0 space-y-3">
+        {/* Right panel — department membership. Width hugs content so the
+            join button sits next to the longest dept name, not at the far
+            right edge of the viewport. */}
+        <div className="w-max max-w-full space-y-3">
+          {joinedCount === 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+              Join at least one department to get full access to the app.
+            </div>
+          )}
+
           {visibleDepts.map((dept) => (
             <div
               key={dept.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-white transition-colors"
+              className="flex items-center gap-4 p-4 rounded-lg border bg-white transition-colors"
               style={{ borderLeftWidth: 3, borderLeftColor: dept.palette.primary }}
             >
               <div className="min-w-0">
@@ -164,7 +172,7 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
                 <button
                   onClick={() => handleLeave(dept.id)}
                   disabled={loading === dept.id}
-                  className="shrink-0 ml-3 px-3 py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors disabled:opacity-40"
+                  className="shrink-0 px-3 py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors disabled:opacity-40"
                 >
                   {loading === dept.id ? 'Leaving...' : 'Joined ✓'}
                 </button>
@@ -172,7 +180,7 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
                 <button
                   onClick={() => handleJoin(dept.id)}
                   disabled={loading === dept.id}
-                  className="shrink-0 ml-3 px-3 py-1.5 rounded-lg border-2 border-slate-200 text-slate-500 text-xs font-medium hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors disabled:opacity-40"
+                  className="shrink-0 px-3 py-1.5 rounded-lg border-2 border-slate-200 text-slate-500 text-xs font-medium hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors disabled:opacity-40"
                 >
                   {loading === dept.id ? 'Joining...' : 'Join'}
                 </button>
