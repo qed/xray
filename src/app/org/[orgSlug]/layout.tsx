@@ -37,6 +37,7 @@ export default async function OrgLayout({
 
   const allNavLinks = [
     { href: `${base}/dashboard`, label: 'Dashboard', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner', 'admin', 'member'] },
+    { href: `${base}/team`, label: 'Team', roles: ['owner', 'admin', 'member'] },
     { href: `${base}/intake`, label: 'Intake', roles: ['owner', 'admin', 'member'] },
     { href: `${base}/tracker`, label: 'Tracker', roles: ['owner'] },
     { href: `${base}/risks`, label: 'Risks', roles: ['owner'] },
@@ -45,8 +46,11 @@ export default async function OrgLayout({
     { href: `${base}/briefs`, label: 'Briefs', roles: ['owner', 'admin'] },
   ];
 
+  // Gated members (no joined departments) only see the Team link so they
+  // can get to the CTA and join one. Everyone else sees the full
+  // role-filtered nav.
   const navLinks = isGatedMember
-    ? []
+    ? allNavLinks.filter((link) => link.href === `${base}/team`)
     : allNavLinks.filter((link) => link.roles.includes(role));
 
   return (
