@@ -29,17 +29,6 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
     // Fetch all departments for the picker (admins/owners can see all, members see what RLS allows)
     const allDepts = await getDepartments(org.id);
 
-    if (allDepts.length === 0) {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">My Team</h1>
-            <p className="text-slate-500 mt-1">No departments have been created yet.</p>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <DepartmentPicker
         orgId={org.id}
