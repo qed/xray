@@ -100,12 +100,35 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
 
   return (
     <div>
-      {/* Page header — matches dashboard style */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">My Departments</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {orgName} &middot; {departments.length} Departments &middot; {joinedCount} Joined
-        </p>
+      {/* Page header row. On desktop the title takes the sidebar's 260px
+          slot and the CTA banner (when visible) sits in the right-column
+          slot — so the top of the banner aligns with "My Departments" and
+          the first dept rows in both columns line up below. */}
+      <div className="mb-6 md:flex md:items-start md:gap-6">
+        <div className="md:w-[260px] md:shrink-0">
+          <h1 className="text-2xl font-bold text-slate-900">My Departments</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {orgName} &middot; {departments.length} Departments &middot; {joinedCount} Joined
+          </p>
+        </div>
+
+        {joinedCount === 0 && (
+          <div className="mt-3 md:mt-0 md:flex-1 md:max-w-md rounded-lg border-2 border-emerald-400 bg-emerald-50 px-5 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-bold">
+                1
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-emerald-900">
+                  Join at least one department to get started
+                </p>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  Pick the department you work in below. You&rsquo;ll unlock the dashboard, intake, and everything else once you join one.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -140,24 +163,6 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
             borders. Name/stats are intentionally omitted — they're already
             in the left column. */}
         <div className="w-max max-w-full flex flex-col gap-1">
-          {joinedCount === 0 && (
-            <div className="rounded-lg border-2 border-emerald-400 bg-emerald-50 px-5 py-4 mb-3 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-bold">
-                  1
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-emerald-900">
-                    Join at least one department to get started
-                  </p>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    Pick the department you work in below. You&rsquo;ll unlock the dashboard, intake, and everything else once you join one.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {visibleDepts.map((dept) => (
             <div
               key={dept.id}
