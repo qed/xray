@@ -6,9 +6,8 @@ import AuthForm from '@/components/AuthForm';
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ redirect?: string; invite?: string; error?: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect('/orgs');
-
   const params = await searchParams;
+  if (user) redirect(params.invite ? `/invite/${encodeURIComponent(params.invite)}` : '/orgs');
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center">
       <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-md">

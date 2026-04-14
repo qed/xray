@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const code = searchParams.get('code');
   const type = searchParams.get('type');
+  const invite = searchParams.get('invite');
 
   if (code) {
     const redirectTo = new URL('/orgs', request.url);
@@ -39,6 +40,15 @@ export async function GET(request: NextRequest) {
           return NextResponse.redirect(new URL('/update-password', request.url), {
             headers: response.headers,
           });
+        }
+
+        // If this confirmation carried an invite code, hand off to the invite
+        // route — it will auto-join the org now that the user is authenticated.
+        if (invite) {
+          return NextResponse.redirect(
+            new URL(`/invite/${encodeURIComponent(invite)}`, request.url),
+            { headers: response.headers }
+          );
         }
 
         // Find user's first org and redirect there

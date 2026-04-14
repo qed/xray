@@ -25,12 +25,21 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
       const supabase = createClient();
 
       if (mode === 'signup') {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+        const emailRedirectTo = inviteCode
+          ? `${window.location.origin}/auth/callback?invite=${encodeURIComponent(inviteCode.trim().toLowerCase())}`
+          : `${window.location.origin}/auth/callback`;
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo },
+        });
         if (signUpError) { setError(signUpError.message); setLoading(false); return; }
 
         // If email confirmation is required, session will be null
         if (!signUpData.session) {
-          window.location.href = '/signup-success';
+          window.location.href = inviteCode
+            ? `/signup-success?invite=${encodeURIComponent(inviteCode)}`
+            : '/signup-success';
           return;
         }
       } else {
@@ -95,10 +104,13 @@ export default function AuthForm({ mode, inviteCode }: AuthFormProps) {
 
     try {
       const supabase = createClient();
+      const emailRedirectTo = inviteCode
+        ? `${window.location.origin}/auth/callback?invite=${encodeURIComponent(inviteCode.trim().toLowerCase())}`
+        : `${window.location.origin}/auth/callback`;
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo,
           shouldCreateUser: false,
         },
       });
