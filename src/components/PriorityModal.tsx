@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { RankedOpportunity } from '@/lib/types';
+import { STATUS_TRANSITIONS, type PriorityStatus } from '@/lib/constants';
 
 interface PriorityModalProps {
   opportunity: RankedOpportunity | null;
@@ -41,10 +42,41 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  complete: 'Completed',
+  in_progress: 'In Progress',
+  proposed: 'Proposed',
+  not_started: 'Not Started',
+  rejected: 'Rejected',
+  approved: 'Approved',
+};
+
+const ADVANCE_LABELS: Record<string, string> = {
+  approved: 'Approve',
+  rejected: 'Reject',
+  in_progress: 'Start',
+  complete: 'Complete',
+  not_started: 'Begin',
+};
+
 export default function PriorityModal({ opportunity, onClose }: PriorityModalProps) {
   const params = useParams();
+  const router = useRouter();
   const orgSlug = params?.orgSlug as string | undefined;
   const prefix = orgSlug ? `/org/${orgSlug}` : '';
+
+  const [localStatus, setLocalStatus] = useState<string>(opportunity?.status ?? 'not_started');
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState('');
+
+  // Reset local state when a different priority is opened (keyed on id, not object ref)
+  useEffect(() => {
+    if (opportunity) {
+      setLocalStatus(opportunity.status);
+      setError('');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opportunity?.id]);
 
   useEffect(() => {
     if (!opportunity) return;
@@ -62,6 +94,35 @@ export default function PriorityModal({ opportunity, onClose }: PriorityModalPro
   if (!opportunity) return null;
 
   const opp = opportunity;
+  const nextStatuses = STATUS_TRANSITIONS[localStatus as PriorityStatus] ?? [];
+
+  async function handleAdvance(nextStatus: string) {
+    setUpdating(true);
+    setError('');
+    const prevStatus = localStatus;
+    // Optimistic update — approved auto-transitions to not_started at API layer
+    const effectiveStatus = nextStatus === 'approved' ? 'not_started' : nextStatus;
+    setLocalStatus(effectiveStatus);
+    try {
+      const res = await fetch(`/api/priorities/${opp.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setLocalStatus(prevStatus);
+        setError(data.error || 'Failed to update status');
+      } else {
+        router.refresh();
+      }
+    } catch {
+      setLocalStatus(prevStatus);
+      setError('Network error — please try again');
+    } finally {
+      setUpdating(false);
+    }
+  }
 
   return (
     <div
@@ -99,18 +160,32 @@ export default function PriorityModal({ opportunity, onClose }: PriorityModalPro
             <Badge label="Effort" value={opp.effort} colorMap={effortColors} />
             <Badge label="Complexity" value={opp.complexity} colorMap={complexityColors} />
             <span className={`inline-flex items-center text-xs px-2.5 py-1 rounded-md border ${
-              opp.status === 'complete' ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-              : opp.status === 'in_progress' ? 'bg-amber-100 text-amber-700 border-amber-200'
-              : opp.status === 'proposed' ? 'bg-purple-100 text-purple-700 border-purple-200'
+              localStatus === 'complete' ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+              : localStatus === 'in_progress' ? 'bg-amber-100 text-amber-700 border-amber-200'
+              : localStatus === 'proposed' ? 'bg-purple-100 text-purple-700 border-purple-200'
+              : localStatus === 'rejected' ? 'bg-red-100 text-red-700 border-red-200'
               : 'bg-slate-100 text-slate-500 border-slate-200'
             }`}>
-              {opp.status === 'complete' ? 'Completed'
-              : opp.status === 'in_progress' ? 'In Progress'
-              : opp.status === 'proposed' ? 'Proposed'
-              : opp.status === 'not_started' ? 'Not Started'
-              : opp.status}
+              {STATUS_LABELS[localStatus] ?? localStatus}
             </span>
+            {nextStatuses.length > 0 && nextStatuses.map((next) => (
+              <button
+                key={next}
+                onClick={() => handleAdvance(next)}
+                disabled={updating}
+                className={`inline-flex items-center text-xs px-2.5 py-1 rounded-md border font-medium transition-colors disabled:opacity-40 ${
+                  next === 'rejected'
+                    ? 'border-red-200 text-red-600 hover:bg-red-50'
+                    : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                }`}
+              >
+                {updating ? 'Updating...' : (ADVANCE_LABELS[next] ?? next)} →
+              </button>
+            ))}
           </div>
+          {error && (
+            <p className="text-xs text-red-600 mt-1">{error}</p>
+          )}
 
           {opp.whatToAutomate && (
             <Section title="What to Automate">
