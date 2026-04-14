@@ -176,18 +176,27 @@ function PrioritySummaryContent({
 
   return (
     <>
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-slate-900">
-          #{priority.rank} {priority.name}
-          {rpt?.is_placeholder && (
-            <span className="ml-2 inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
-              Sample Data
-            </span>
-          )}
-        </h2>
-        <div className="mt-2">
-          <StatusToggle priorityId={priority.id} initialStatus={priority.status} />
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold text-slate-900">
+            #{priority.rank} {priority.name}
+            {rpt?.is_placeholder && (
+              <span className="ml-2 inline-block px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                Sample Data
+              </span>
+            )}
+          </h2>
+          <div className="mt-2">
+            <StatusToggle priorityId={priority.id} initialStatus={priority.status} />
+          </div>
         </div>
+        <Link
+          href={`/org/${orgSlug}/dashboard/${deptSlug}/${priority.slug}`}
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
+          style={{ backgroundColor: palette.primary }}
+        >
+          View Full Report &rarr;
+        </Link>
       </div>
 
       {rpt ? (
@@ -220,16 +229,6 @@ function PrioritySummaryContent({
         </div>
       )}
 
-      {/* CTA */}
-      <div className="text-center">
-        <Link
-          href={`/org/${orgSlug}/dashboard/${deptSlug}/${priority.slug}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
-          style={{ backgroundColor: palette.primary }}
-        >
-          View Full Report &rarr;
-        </Link>
-      </div>
     </>
   );
 }

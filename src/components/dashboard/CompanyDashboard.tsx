@@ -194,8 +194,15 @@ function DeptSummaryContent({ dept, orgSlug }: { dept: DepartmentWithPalette; or
 
   return (
     <>
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-lg font-bold" style={{ color: palette.primary }}>{dept.name}</h2>
+        <Link
+          href={`/org/${orgSlug}/dashboard/${dept.slug}`}
+          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
+          style={{ backgroundColor: palette.primary }}
+        >
+          View Department Dashboard &rarr;
+        </Link>
       </div>
 
       {/* Stat cards */}
@@ -222,16 +229,6 @@ function DeptSummaryContent({ dept, orgSlug }: { dept: DepartmentWithPalette; or
         </p>
       </div>
 
-      {/* CTA */}
-      <div className="text-center">
-        <Link
-          href={`/org/${orgSlug}/dashboard/${dept.slug}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-medium transition-colors hover:opacity-90"
-          style={{ backgroundColor: palette.primary }}
-        >
-          View Department Dashboard &rarr;
-        </Link>
-      </div>
     </>
   );
 }
