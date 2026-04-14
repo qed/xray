@@ -141,8 +141,20 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
             in the left column. */}
         <div className="w-max max-w-full flex flex-col gap-1">
           {joinedCount === 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 mb-2">
-              Join at least one department to get full access to the app.
+            <div className="rounded-lg border-2 border-emerald-400 bg-emerald-50 px-5 py-4 mb-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-bold">
+                  1
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-emerald-900">
+                    Join at least one department to get started
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Pick the department you work in below. You&rsquo;ll unlock the dashboard, intake, and everything else once you join one.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

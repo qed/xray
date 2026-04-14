@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getOrgBySlug, getUserRole, getUnfiledRankedOpportunities } from '@/lib/db';
+import { getOrgBySlug, getUserRole, getUnfiledRankedOpportunities, getUserDepartments } from '@/lib/db';
 import UserMenu from '@/components/UserMenu';
 import { PriorityModalProvider } from '@/components/PriorityModalContext';
 import { RoleProvider } from '@/components/RoleContext';
@@ -28,6 +28,11 @@ export default async function OrgLayout({
   const unfiled = await getUnfiledRankedOpportunities(org.id);
   const unfiledCount = unfiled.length;
 
+  // Members who haven't joined a department yet see a stripped nav — only
+  // "My Team" is useful until they join. Owners/admins always see full nav.
+  const memberDepts = role === 'member' ? await getUserDepartments(user.id, org.id) : [];
+  const isGatedMember = role === 'member' && memberDepts.length === 0;
+
   const base = `/org/${orgSlug}`;
 
   const allNavLinks = [
@@ -40,7 +45,9 @@ export default async function OrgLayout({
     { href: `${base}/briefs`, label: 'Briefs', roles: ['owner', 'admin'] },
   ];
 
-  const navLinks = allNavLinks.filter((link) => link.roles.includes(role));
+  const navLinks = isGatedMember
+    ? []
+    : allNavLinks.filter((link) => link.roles.includes(role));
 
   return (
     <RoleProvider role={role as 'owner' | 'admin' | 'member'}>
