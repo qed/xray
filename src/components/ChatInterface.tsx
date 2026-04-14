@@ -359,7 +359,14 @@ export default function ChatInterface({
           </div>
         )}
 
-        {messages.map((msg, i) => (
+        {messages.map((msg, i) => {
+          // Hide assistant bubbles that are empty after stripping extraction/phase/topic tags
+          const isLastAndStreaming = streaming && i === messages.length - 1;
+          if (msg.role === 'assistant' && !displayContent(msg.content) && !isLastAndStreaming) {
+            return null;
+          }
+
+          return (
           <div
             key={i}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -373,7 +380,7 @@ export default function ChatInterface({
                 <div className="overflow-x-auto [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-200 [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-1.5 [&_td]:text-xs [&_tr:nth-child(even)]:bg-slate-50">
                   {(() => {
                     const displayed = displayContent(msg.content);
-                    if (!displayed && streaming && i === messages.length - 1) return null;
+                    if (!displayed) return null;
                     return (
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {displayed}
@@ -410,7 +417,8 @@ export default function ChatInterface({
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 

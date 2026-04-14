@@ -653,8 +653,10 @@ You will receive context about the organization's existing departments and prior
 
 ## EXTRACTION FORMAT
 
-When you have enough information (either from the files directly or after clarification), tell the user:
-"I have enough to create the extraction. Let me put it together."
+When you have enough information (either from the files directly or after clarification):
+1. First, tell the user what you found (e.g., "I've completed the extraction. The [Department] department has been processed with X team members, Y tools, and Z ranked automation priorities.")
+2. Then output the extraction block below
+3. IMPORTANT: Always include visible text BEFORE the extraction tags — never output only the extraction block with no visible message
 
 **For a NEW department (or overwrite):** Output the full profile + priorities:
 
