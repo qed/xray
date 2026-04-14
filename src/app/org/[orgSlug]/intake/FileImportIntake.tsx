@@ -243,23 +243,21 @@ export default function FileImportIntake({ orgId, orgSlug }: FileImportIntakePro
         throw new Error('No conversation ID returned from chat');
       }
 
-      // 5. If extraction arrived in the first response, process it immediately
-      if (firstResponseExtraction) {
-        setConversationId(newConvoId);
-        await handleExtraction(
-          firstResponseExtraction.data,
-          firstResponseExtraction.conversationId || newConvoId,
-        );
-        return; // handleExtraction will transition to 'complete' phase or show overwrite dialog
-      }
-
-      // 6. Otherwise transition to chat phase for continued conversation
+      // 5. Transition to chat phase (needed for error banners and overwrite dialogs)
       setConversationId(newConvoId);
       setExistingMessages([
         { role: 'user', content: userMessage },
         { role: 'assistant', content: assistantContent },
       ]);
       setPhase('chat');
+
+      // 6. If extraction arrived in the first response, process it immediately
+      if (firstResponseExtraction) {
+        await handleExtraction(
+          firstResponseExtraction.data,
+          firstResponseExtraction.conversationId || newConvoId,
+        );
+      }
     } catch (err) {
       console.error('File import failed:', err);
       setFileError(err instanceof Error ? err.message : 'Import failed. Please try again.');
