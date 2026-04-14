@@ -32,7 +32,6 @@ export default async function OrgLayout({
 
   const allNavLinks = [
     { href: `${base}/dashboard`, label: 'Dashboard', badge: unfiledCount > 0 ? unfiledCount : undefined, roles: ['owner', 'admin', 'member'] },
-    { href: `${base}/team`, label: 'My Team', roles: ['owner', 'admin', 'member'] },
     { href: `${base}/intake`, label: 'Intake', roles: ['owner', 'admin', 'member'] },
     { href: `${base}/tracker`, label: 'Tracker', roles: ['owner'] },
     { href: `${base}/risks`, label: 'Risks', roles: ['owner'] },

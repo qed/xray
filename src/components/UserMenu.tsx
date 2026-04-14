@@ -37,6 +37,10 @@ export default function UserMenu({ email, orgSlug, role }: { email: string; orgS
             <p className="text-sm font-medium text-slate-900">{email}</p>
             {role && <p className="text-xs text-slate-500 capitalize">{role}</p>}
           </div>
+          {orgSlug && (
+            <Link href={`/org/${orgSlug}/team`} onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">My Team</Link>
+          )}
           {orgSlug && (role === 'owner' || role === 'admin') && (
             <Link href={`/org/${orgSlug}/settings`} onClick={() => setOpen(false)}
               className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Settings</Link>
