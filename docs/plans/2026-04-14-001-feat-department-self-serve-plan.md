@@ -1,6 +1,6 @@
 ---
 title: "feat: Department self-serve join, leave, and create"
-status: active
+status: completed
 origin: docs/brainstorms/department-self-serve-requirements.md
 date: 2026-04-14
 ---
@@ -64,7 +64,7 @@ If the last member leaves a department, it remains. No auto-delete, no warning. 
 ## Implementation Units
 
 ### Unit 1: Nav visibility for all roles
-- [ ] **Goal:** Make `/team` link visible to owners, admins, and members
+- [x] **Goal:** Make `/team` link visible to owners, admins, and members
 - **Files:**
   - `src/app/org/[orgSlug]/layout.tsx` — change line 35: `roles: ['member']` → `roles: ['owner', 'admin', 'member']`
 - **Approach:** One-line change to the `allNavLinks` array
@@ -76,7 +76,7 @@ If the last member leaves a department, it remains. No auto-delete, no warning. 
 - **Verification:** All three roles see the `/team` link in the nav bar
 
 ### Unit 2: First-login redirect to `/team`
-- [ ] **Goal:** Users with no department links get redirected to `/team` from any org page (except `/team` and `/settings`)
+- [x] **Goal:** Users with no department links get redirected to `/team` from any org page (except `/team` and `/settings`)
 - **Files:**
   - `src/app/org/[orgSlug]/layout.tsx` — add `getUserDepartments` check after role check, redirect if empty and path is not `/team` or `/settings`
 - **Approach:**
@@ -95,7 +95,7 @@ If the last member leaves a department, it remains. No auto-delete, no warning. 
 - **Verification:** Brand-new user accepting an invite cannot navigate to any org page other than `/team` or `/settings` until they select a department
 
 ### Unit 3: Migration — RLS fix, `create_department_shell` RPC, unique name constraint
-- [ ] **Goal:** Database support for department self-serve: fix member visibility, create empty departments, enforce unique names
+- [x] **Goal:** Database support for department self-serve: fix member visibility, create empty departments, enforce unique names
 - **Files:**
   - `supabase/migrations/020_department_self_serve.sql` (new)
 - **Approach:**
@@ -125,7 +125,7 @@ If the last member leaves a department, it remains. No auto-delete, no warning. 
 - **Verification:** Members can see all org departments in the picker; RPC creates department + member link atomically; duplicate names rejected
 
 ### Unit 4: "Create new department" UI + API route
-- [ ] **Goal:** Add "Create new department" option to the department picker with inline name form
+- [x] **Goal:** Add "Create new department" option to the department picker with inline name form
 - **Files:**
   - `src/app/org/[orgSlug]/team/DepartmentPicker.tsx` — add "Create new" card with inline text input
   - `src/app/api/departments/create/route.ts` (new) — API route calling `create_department_shell` RPC
@@ -149,7 +149,7 @@ If the last member leaves a department, it remains. No auto-delete, no warning. 
 - **Verification:** User can create a new department from the picker and is automatically a member of it
 
 ### Unit 5: Join additional + leave departments from TeamView
-- [ ] **Goal:** Users with existing departments can join more or leave any from `/team`
+- [x] **Goal:** Users with existing departments can join more or leave any from `/team`
 - **Files:**
   - `src/app/org/[orgSlug]/team/TeamView.tsx` — add "Join departments" button and "Leave" button per department
   - `src/app/org/[orgSlug]/team/page.tsx` — pass `allDepts` to TeamView for the join picker
