@@ -134,12 +134,14 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
           />
         </div>
 
-        {/* Right panel — department membership. Width hugs content so the
-            join button sits next to the longest dept name, not at the far
-            right edge of the viewport. */}
-        <div className="w-max max-w-full space-y-3">
+        {/* Right panel — Join/Leave controls aligned 1:1 with the left
+            sidebar rows. Styling mirrors DepartmentSidebar: same padding,
+            same rounded corners, same 3px colored left border, no other
+            borders. Name/stats are intentionally omitted — they're already
+            in the left column. */}
+        <div className="w-max max-w-full flex flex-col gap-1">
           {joinedCount === 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 mb-2">
               Join at least one department to get full access to the app.
             </div>
           )}
@@ -147,32 +149,14 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
           {visibleDepts.map((dept) => (
             <div
               key={dept.id}
-              className="flex items-center gap-4 p-4 rounded-lg border bg-white transition-colors"
-              style={{ borderLeftWidth: 3, borderLeftColor: dept.palette.primary }}
+              className="flex items-center px-3 py-2.5 rounded-md border-l-[3px] min-h-[58px]"
+              style={{ borderLeftColor: dept.palette.primary }}
             >
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-slate-900 truncate">{dept.name}</div>
-                <div className="flex items-center gap-3 mt-0.5">
-                  <span className="text-xs text-slate-500">{dept.totalPriorities} priorities</span>
-                  {dept.inProgress > 0 && (
-                    <span className="text-xs font-medium" style={{ color: dept.palette.primary }}>
-                      {dept.inProgress} active
-                    </span>
-                  )}
-                  {dept.completed > 0 && (
-                    <span className="text-xs text-emerald-600">{dept.completed} done</span>
-                  )}
-                  {dept.totalPriorities > 0 && (
-                    <span className="text-xs text-slate-400">{dept.progressPercent}%</span>
-                  )}
-                </div>
-              </div>
-
               {dept.joined ? (
                 <button
                   onClick={() => handleLeave(dept.id)}
                   disabled={loading === dept.id}
-                  className="shrink-0 px-3 py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-700 text-xs font-medium hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors disabled:opacity-40"
                 >
                   {loading === dept.id ? 'Leaving...' : 'Joined ✓'}
                 </button>
@@ -180,7 +164,7 @@ export default function DepartmentManager({ orgId, orgSlug, orgName, role, sideb
                 <button
                   onClick={() => handleJoin(dept.id)}
                   disabled={loading === dept.id}
-                  className="shrink-0 px-3 py-1.5 rounded-lg border-2 border-slate-200 text-slate-500 text-xs font-medium hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-lg border-2 border-slate-200 text-slate-500 text-xs font-medium hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-colors disabled:opacity-40"
                 >
                   {loading === dept.id ? 'Joining...' : 'Join'}
                 </button>
