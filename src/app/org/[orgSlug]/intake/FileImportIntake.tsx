@@ -206,6 +206,7 @@ export default function FileImportIntake({ orgId, orgSlug }: FileImportIntakePro
       const decoder = new TextDecoder();
       let assistantContent = '';
       let newConvoId = '';
+      let firstResponseExtraction: { data: Record<string, unknown>; conversationId: string } | null = null;
 
       if (reader) {
         while (true) {
@@ -224,6 +225,12 @@ export default function FileImportIntake({ orgId, orgSlug }: FileImportIntakePro
                 if (data.conversationId) {
                   newConvoId = data.conversationId;
                 }
+              } else if (data.type === 'extraction') {
+                // Claude extracted in the first response — queue it for processing
+                firstResponseExtraction = {
+                  data: data.data,
+                  conversationId: data.conversationId || newConvoId,
+                };
               }
             } catch {
               // skip malformed SSE lines
@@ -236,7 +243,17 @@ export default function FileImportIntake({ orgId, orgSlug }: FileImportIntakePro
         throw new Error('No conversation ID returned from chat');
       }
 
-      // 5. Transition to chat phase with existing conversation
+      // 5. If extraction arrived in the first response, process it immediately
+      if (firstResponseExtraction) {
+        setConversationId(newConvoId);
+        await handleExtraction(
+          firstResponseExtraction.data,
+          firstResponseExtraction.conversationId || newConvoId,
+        );
+        return; // handleExtraction will transition to 'complete' phase or show overwrite dialog
+      }
+
+      // 6. Otherwise transition to chat phase for continued conversation
       setConversationId(newConvoId);
       setExistingMessages([
         { role: 'user', content: userMessage },
