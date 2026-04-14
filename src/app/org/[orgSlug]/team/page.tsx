@@ -77,11 +77,18 @@ export default async function TeamPage({ params }: { params: Promise<{ orgSlug: 
     })
   );
 
+  // Build list of departments the user hasn't joined yet
+  const unjoinedDepts = allDepts
+    .filter((d) => !linkedDeptIds.includes(d.id))
+    .map((d) => ({ id: d.id, name: d.name }));
+
   return (
     <TeamView
       departments={deptData}
       orgSlug={orgSlug}
+      orgId={org.id}
       role={role}
+      unjoinedDepartments={unjoinedDepts}
     />
   );
 }

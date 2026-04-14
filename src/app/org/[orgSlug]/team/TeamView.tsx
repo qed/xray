@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { DbDepartment, DbPriority } from '@/lib/types';
 import ApprovalBanner from './ApprovalBanner';
 import PriorityRow from './PriorityRow';
@@ -19,13 +20,21 @@ interface DeptData {
   };
 }
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+}
+
 interface Props {
   departments: DeptData[];
   orgSlug: string;
+  orgId: string;
   role: string;
+  unjoinedDepartments: DepartmentOption[];
 }
 
-export default function TeamView({ departments, orgSlug, role }: Props) {
+export default function TeamView({ departments, orgSlug, orgId, role, unjoinedDepartments }: Props) {
+  const router = useRouter();
   const storageKey = `team_dept_${orgSlug}`;
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -38,9 +47,79 @@ export default function TeamView({ departments, orgSlug, role }: Props) {
     }
   }, [departments, storageKey]);
 
+  const [leaving, setLeaving] = useState<string | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState<string | null>(null);
+  const [showJoin, setShowJoin] = useState(false);
+  const [joinSelected, setJoinSelected] = useState<string[]>([]);
+  const [joining, setJoining] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [actionError, setActionError] = useState('');
+
   function switchDept(idx: number) {
     setActiveIdx(idx);
     localStorage.setItem(storageKey, departments[idx].department.id);
+  }
+
+  async function handleLeave(deptId: string) {
+    setLeaving(deptId);
+    setActionError('');
+    const res = await fetch('/api/departments/leave', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgId, departmentId: deptId }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setActionError(data.error || 'Failed to leave department');
+      setLeaving(null);
+      return;
+    }
+    setConfirmLeave(null);
+    setLeaving(null);
+    router.refresh();
+  }
+
+  async function handleJoin() {
+    if (joinSelected.length === 0) return;
+    setJoining(true);
+    setActionError('');
+    const res = await fetch('/api/departments/assign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgId, departmentIds: joinSelected, selfSelect: true }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setActionError(data.error || 'Failed to join');
+      setJoining(false);
+      return;
+    }
+    setJoinSelected([]);
+    setShowJoin(false);
+    router.refresh();
+  }
+
+  async function handleCreateDept() {
+    const trimmed = newDeptName.trim();
+    if (!trimmed) { setActionError('Department name cannot be empty'); return; }
+    setCreating(true);
+    setActionError('');
+    const res = await fetch('/api/departments/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orgId, name: trimmed }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setActionError(data.error || 'Failed to create department');
+      setCreating(false);
+      return;
+    }
+    setNewDeptName('');
+    setShowCreateForm(false);
+    router.refresh();
   }
 
   const active = departments[activeIdx];
@@ -77,10 +156,43 @@ export default function TeamView({ departments, orgSlug, role }: Props) {
         </div>
       )}
 
+      {actionError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-700">
+          {actionError}
+        </div>
+      )}
+
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">{department.name}</h1>
-        {department.mission && <p className="text-slate-500 mt-1">{department.mission}</p>}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{department.name}</h1>
+          {department.mission && <p className="text-slate-500 mt-1">{department.mission}</p>}
+        </div>
+        {confirmLeave === department.id ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-500">Leave {department.name}?</span>
+            <button
+              onClick={() => handleLeave(department.id)}
+              disabled={leaving === department.id}
+              className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-40 transition-colors"
+            >
+              {leaving === department.id ? 'Leaving...' : 'Confirm'}
+            </button>
+            <button
+              onClick={() => setConfirmLeave(null)}
+              className="px-3 py-1 rounded-lg text-slate-500 text-xs font-medium hover:text-slate-700 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setConfirmLeave(department.id); setActionError(''); }}
+            className="px-3 py-1.5 rounded-lg text-slate-400 text-xs font-medium hover:text-red-600 hover:bg-red-50 transition-colors"
+          >
+            Leave
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -161,6 +273,119 @@ export default function TeamView({ departments, orgSlug, role }: Props) {
           <p className="text-slate-400 text-sm">No priorities yet for this department.</p>
         </div>
       )}
+
+      {/* Join additional departments */}
+      <div className="border-t border-slate-200 pt-6">
+        {showJoin ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Join a department</h2>
+              <button
+                onClick={() => { setShowJoin(false); setJoinSelected([]); setShowCreateForm(false); setActionError(''); }}
+                className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+
+            {unjoinedDepartments.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {unjoinedDepartments.map((dept) => (
+                  <button
+                    key={dept.id}
+                    type="button"
+                    onClick={() => setJoinSelected((prev) =>
+                      prev.includes(dept.id) ? prev.filter((x) => x !== dept.id) : [...prev, dept.id]
+                    )}
+                    className={`text-left p-4 rounded-lg border-2 transition-colors ${
+                      joinSelected.includes(dept.id)
+                        ? 'border-emerald-500 bg-emerald-50'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
+                        joinSelected.includes(dept.id)
+                          ? 'border-emerald-500 bg-emerald-500'
+                          : 'border-slate-300'
+                      }`}>
+                        {joinSelected.includes(dept.id) && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium text-slate-900">{dept.name}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Create new department option */}
+            {showCreateForm ? (
+              <div className="p-4 rounded-lg border-2 border-dashed border-slate-300 bg-white space-y-3">
+                <input
+                  type="text"
+                  value={newDeptName}
+                  onChange={(e) => setNewDeptName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreateDept()}
+                  placeholder="Department name"
+                  autoFocus
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCreateDept}
+                    disabled={creating}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+                  >
+                    {creating ? 'Creating...' : 'Create'}
+                  </button>
+                  <button
+                    onClick={() => { setShowCreateForm(false); setNewDeptName(''); }}
+                    className="px-3 py-1.5 rounded-lg text-slate-500 text-xs font-medium hover:text-slate-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(true)}
+                className="text-left p-4 rounded-lg border-2 border-dashed border-slate-300 bg-white hover:border-slate-400 transition-colors w-full"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded border-2 border-slate-300 flex items-center justify-center shrink-0">
+                    <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-slate-500">Create new department</span>
+                </div>
+              </button>
+            )}
+
+            {joinSelected.length > 0 && (
+              <button
+                onClick={handleJoin}
+                disabled={joining}
+                className="px-6 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+              >
+                {joining ? 'Joining...' : `Join ${joinSelected.length} department${joinSelected.length !== 1 ? 's' : ''}`}
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => { setShowJoin(true); setActionError(''); }}
+            className="text-sm text-emerald-600 font-medium hover:text-emerald-700 transition-colors"
+          >
+            + Join another department
+          </button>
+        )}
+      </div>
     </div>
   );
 }
