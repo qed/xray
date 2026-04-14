@@ -74,6 +74,24 @@ export async function proxy(request: NextRequest) {
       if (!membership) {
         return NextResponse.redirect(new URL('/join', request.url));
       }
+
+      // Redirect users with no department links to /team (self-serve flow)
+      const teamPath = `/org/${orgSlug}/team`;
+      const settingsPath = `/org/${orgSlug}/settings`;
+      const isExempt = pathname === teamPath || pathname.startsWith(`${teamPath}/`)
+        || pathname === settingsPath || pathname.startsWith(`${settingsPath}/`);
+
+      if (!isExempt) {
+        const { count } = await supabase
+          .from('member_departments')
+          .select('id, department:departments!inner(org_id)', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('department.org_id', org.id);
+
+        if (count === 0) {
+          return NextResponse.redirect(new URL(teamPath, request.url));
+        }
+      }
     }
   }
 
