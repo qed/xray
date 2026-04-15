@@ -1,6 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { isPlatformAdmin } from '@/lib/admin/is-platform-admin';
+import {
+  IMPERSONATION_COOKIE,
+  decodeImpersonationCookie,
+  isExpired,
+} from '@/lib/admin/impersonation';
 
 const publicPaths = ['/', '/login', '/signup', '/signup-success', '/join', '/forgot-password', '/update-password'];
 const publicPrefixes = ['/invite/', '/auth/', '/wevend', '/csuite'];
@@ -40,6 +45,25 @@ export async function proxy(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Impersonation cookie: if present but expired (or tampered), clear and redirect to
+  // the target's detail page with a notice. Valid cookies flow through; the banner
+  // in the root layout handles display.
+  const rawImp = request.cookies.get(IMPERSONATION_COOKIE)?.value;
+  if (rawImp) {
+    const decoded = decodeImpersonationCookie(rawImp);
+    if (!decoded || isExpired(decoded)) {
+      const targetId = decoded?.targetUserId;
+      const url = new URL(
+        targetId ? `/admin/users/${targetId}` : '/admin/users',
+        request.url
+      );
+      url.searchParams.set('impersonation', 'expired');
+      const redirect = NextResponse.redirect(url);
+      redirect.cookies.set(IMPERSONATION_COOKIE, '', { path: '/', maxAge: 0 });
+      return redirect;
+    }
+  }
 
   if (!user) {
     const loginUrl = new URL('/login', request.url);

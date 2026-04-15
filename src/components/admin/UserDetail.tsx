@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import DeleteUserDialog from './DeleteUserDialog';
+import ImpersonateDialog from './ImpersonateDialog';
 
 interface UserInfo {
   id: string;
@@ -41,6 +42,7 @@ function fmt(iso: string | null): string {
 
 export default function UserDetail({ user, memberships, audit }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [impersonateOpen, setImpersonateOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -55,6 +57,12 @@ export default function UserDetail({ user, memberships, audit }: Props) {
           <div className="text-xs text-slate-400 font-mono mt-1">{user.id}</div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setImpersonateOpen(true)}
+            className="px-3 py-1.5 text-sm rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700"
+          >
+            Impersonate
+          </button>
           <button
             onClick={() => setDeleteOpen(true)}
             className="px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white font-medium hover:bg-red-700"
@@ -142,6 +150,12 @@ export default function UserDetail({ user, memberships, audit }: Props) {
         email={user.email}
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
+      />
+      <ImpersonateDialog
+        userId={user.id}
+        email={user.email}
+        open={impersonateOpen}
+        onClose={() => setImpersonateOpen(false)}
       />
     </div>
   );
