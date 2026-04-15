@@ -20,6 +20,7 @@ export default async function AdminUserDetailPage({
     { data: memberRows },
     { data: deptRows },
     { data: auditRows },
+    { data: orgRows },
   ] = await Promise.all([
     admin
       .from('org_members')
@@ -35,6 +36,10 @@ export default async function AdminUserDetailPage({
       .eq('target_user_id', id)
       .order('created_at', { ascending: false })
       .limit(10),
+    admin
+      .from('organizations')
+      .select('id, slug, name')
+      .order('name'),
   ]);
 
   const memberships = (memberRows ?? []).map((m: any) => ({
@@ -71,6 +76,7 @@ export default async function AdminUserDetailPage({
           created_at: a.created_at,
           reason: a.reason,
         }))}
+        orgs={(orgRows ?? []).map((o: any) => ({ id: o.id, slug: o.slug, name: o.name }))}
       />
     </div>
   );

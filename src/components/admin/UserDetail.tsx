@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import DeleteUserDialog from './DeleteUserDialog';
 import ImpersonateDialog from './ImpersonateDialog';
+import EditUserForm from './EditUserForm';
+import MembershipEditor from './MembershipEditor';
 
 interface UserInfo {
   id: string;
@@ -29,10 +31,17 @@ interface AuditEntry {
   reason: string | null;
 }
 
+interface OrgOption {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 interface Props {
   user: UserInfo;
   memberships: Membership[];
   audit: AuditEntry[];
+  orgs: OrgOption[];
 }
 
 function fmt(iso: string | null): string {
@@ -40,7 +49,7 @@ function fmt(iso: string | null): string {
   return new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 }
 
-export default function UserDetail({ user, memberships, audit }: Props) {
+export default function UserDetail({ user, memberships, audit, orgs }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [impersonateOpen, setImpersonateOpen] = useState(false);
 
@@ -83,44 +92,9 @@ export default function UserDetail({ user, memberships, audit }: Props) {
         </div>
       </div>
 
-      <section>
-        <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
-          Memberships
-        </h2>
-        {memberships.length === 0 ? (
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-sm text-slate-400 text-center">
-            No org memberships
-          </div>
-        ) : (
-          <div className="rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
-            {memberships.map((m) => (
-              <div key={m.membership_id} className="px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">{m.org_name}</div>
-                    <div className="text-xs text-slate-500 font-mono">{m.org_slug}</div>
-                  </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                    {m.role}
-                  </span>
-                </div>
-                {m.departments.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {m.departments.map((d) => (
-                      <span
-                        key={d}
-                        className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700"
-                      >
-                        {d}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <EditUserForm userId={user.id} email={user.email} displayName={user.display_name} />
+
+      <MembershipEditor userId={user.id} memberships={memberships} orgs={orgs} />
 
       <section>
         <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">
