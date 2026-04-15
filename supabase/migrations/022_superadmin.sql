@@ -117,36 +117,61 @@ REVOKE EXECUTE ON FUNCTION log_admin_action(uuid, text, uuid, uuid, jsonb, jsonb
 -- assignment. Intent of "delete user" is remove the auth row, not scrub their content.
 -- We null authorship instead of cascading so historical data (notes, briefs) survives.
 
+-- Each block is guarded with to_regclass() so the migration works against any
+-- Supabase project whose prior migrations are partial. Tables that don't exist
+-- in this environment are silently skipped; they can't hold user references
+-- anyway.
+
 -- 5.1 invites.created_by
-ALTER TABLE invites DROP CONSTRAINT IF EXISTS invites_created_by_fkey;
-ALTER TABLE invites
-  ADD CONSTRAINT invites_created_by_fkey
-  FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF to_regclass('public.invites') IS NOT NULL THEN
+    ALTER TABLE invites DROP CONSTRAINT IF EXISTS invites_created_by_fkey;
+    ALTER TABLE invites
+      ADD CONSTRAINT invites_created_by_fkey
+      FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- 5.2 uploads.uploaded_by
-ALTER TABLE uploads DROP CONSTRAINT IF EXISTS uploads_uploaded_by_fkey;
-ALTER TABLE uploads
-  ADD CONSTRAINT uploads_uploaded_by_fkey
-  FOREIGN KEY (uploaded_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF to_regclass('public.uploads') IS NOT NULL THEN
+    ALTER TABLE uploads DROP CONSTRAINT IF EXISTS uploads_uploaded_by_fkey;
+    ALTER TABLE uploads
+      ADD CONSTRAINT uploads_uploaded_by_fkey
+      FOREIGN KEY (uploaded_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- 5.3 project_briefs.created_by
-ALTER TABLE project_briefs DROP CONSTRAINT IF EXISTS project_briefs_created_by_fkey;
-ALTER TABLE project_briefs
-  ADD CONSTRAINT project_briefs_created_by_fkey
-  FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF to_regclass('public.project_briefs') IS NOT NULL THEN
+    ALTER TABLE project_briefs DROP CONSTRAINT IF EXISTS project_briefs_created_by_fkey;
+    ALTER TABLE project_briefs
+      ADD CONSTRAINT project_briefs_created_by_fkey
+      FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- 5.4 member_departments.created_by (user_id already CASCADEs)
-ALTER TABLE member_departments DROP CONSTRAINT IF EXISTS member_departments_created_by_fkey;
-ALTER TABLE member_departments
-  ADD CONSTRAINT member_departments_created_by_fkey
-  FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF to_regclass('public.member_departments') IS NOT NULL THEN
+    ALTER TABLE member_departments DROP CONSTRAINT IF EXISTS member_departments_created_by_fkey;
+    ALTER TABLE member_departments
+      ADD CONSTRAINT member_departments_created_by_fkey
+      FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- 5.5 priority_notes.user_id — currently NOT NULL with no ON DELETE; needs both changes.
-ALTER TABLE priority_notes ALTER COLUMN user_id DROP NOT NULL;
-ALTER TABLE priority_notes DROP CONSTRAINT IF EXISTS priority_notes_user_id_fkey;
-ALTER TABLE priority_notes
-  ADD CONSTRAINT priority_notes_user_id_fkey
-  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+DO $$ BEGIN
+  IF to_regclass('public.priority_notes') IS NOT NULL THEN
+    ALTER TABLE priority_notes ALTER COLUMN user_id DROP NOT NULL;
+    ALTER TABLE priority_notes DROP CONSTRAINT IF EXISTS priority_notes_user_id_fkey;
+    ALTER TABLE priority_notes
+      ADD CONSTRAINT priority_notes_user_id_fkey
+      FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- ============================================================
 -- Done. To apply: supabase migration up, or paste into the Supabase SQL editor.
