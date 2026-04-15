@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
-export default function UserMenu({ email, orgSlug, role }: { email: string; orgSlug?: string; role?: string }) {
+export default function UserMenu({ email, orgSlug, role, isAdmin }: { email: string; orgSlug?: string; role?: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -44,6 +44,10 @@ export default function UserMenu({ email, orgSlug, role }: { email: string; orgS
           {orgSlug && (role === 'owner' || role === 'admin') && (
             <Link href={`/org/${orgSlug}/settings`} onClick={() => setOpen(false)}
               className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Settings</Link>
+          )}
+          {isAdmin && (
+            <Link href="/admin" onClick={() => setOpen(false)}
+              className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Admin</Link>
           )}
           <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Log Out</button>
         </div>

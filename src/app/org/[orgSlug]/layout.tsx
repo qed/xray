@@ -5,6 +5,7 @@ import { getOrgBySlug, getUserRole, getUnfiledRankedOpportunities, getUserDepart
 import UserMenu from '@/components/UserMenu';
 import { PriorityModalProvider } from '@/components/PriorityModalContext';
 import { RoleProvider } from '@/components/RoleContext';
+import { isPlatformAdmin } from '@/lib/admin/is-platform-admin';
 
 export default async function OrgLayout({
   children,
@@ -24,6 +25,8 @@ export default async function OrgLayout({
 
   const role = await getUserRole(org.id, user.id);
   if (!role) redirect('/join');
+
+  const isAdmin = await isPlatformAdmin(user.id, user.email);
 
   const unfiled = await getUnfiledRankedOpportunities(org.id);
   const unfiledCount = unfiled.length;
@@ -83,7 +86,7 @@ export default async function OrgLayout({
               ))}
             </div>
 
-            <UserMenu email={user.email ?? ''} orgSlug={orgSlug} role={role} />
+            <UserMenu email={user.email ?? ''} orgSlug={orgSlug} role={role} isAdmin={isAdmin} />
           </div>
         </nav>
 
