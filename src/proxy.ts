@@ -1,5 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
+import { isPlatformAdmin } from '@/lib/admin/is-platform-admin';
+import {
+  IMPERSONATION_COOKIE,
+  decodeImpersonationCookie,
+  isExpired,
+} from '@/lib/admin/impersonation';
 
 const publicPaths = ['/', '/login', '/signup', '/signup-success', '/join', '/forgot-password', '/update-password'];
 const publicPrefixes = ['/invite/', '/auth/', '/wevend', '/csuite'];
@@ -40,10 +46,39 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Impersonation cookie: if present but expired (or tampered), clear and redirect to
+  // the target's detail page with a notice. Valid cookies flow through; the banner
+  // in the root layout handles display.
+  const rawImp = request.cookies.get(IMPERSONATION_COOKIE)?.value;
+  if (rawImp) {
+    const decoded = decodeImpersonationCookie(rawImp);
+    if (!decoded || isExpired(decoded)) {
+      const targetId = decoded?.targetUserId;
+      const url = new URL(
+        targetId ? `/admin/users/${targetId}` : '/admin/users',
+        request.url
+      );
+      url.searchParams.set('impersonation', 'expired');
+      const redirect = NextResponse.redirect(url);
+      redirect.cookies.set(IMPERSONATION_COOKIE, '', { path: '/', maxAge: 0 });
+      return redirect;
+    }
+  }
+
   if (!user) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // /admin: gate with isPlatformAdmin, bypass onboarding. 404 (not 403) so the
+  // surface is invisible to non-admins per requirements R3.
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const allowed = await isPlatformAdmin(user.id, user.email);
+    if (!allowed) {
+      return new NextResponse(null, { status: 404 });
+    }
+    return response;
   }
 
   // /orgs page — authenticated but no org membership check needed
@@ -51,7 +86,11 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (pathname.startsWith('/org/')) {
+  // When impersonating, skip org/dept onboarding redirects so the operator can
+  // freely peek at any org the target belongs to. The target-id-scoped reads are
+  // handled per-page by getEffectiveUserId().
+  const impersonating = rawImp ? decodeImpersonationCookie(rawImp) : null;
+  if (pathname.startsWith('/org/') && !impersonating) {
     const orgSlug = pathname.split('/')[2];
     if (orgSlug) {
       const { data: org } = await supabase
