@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
+import { isPlatformAdmin } from '@/lib/admin/is-platform-admin';
 
 const publicPaths = ['/', '/login', '/signup', '/signup-success', '/join', '/forgot-password', '/update-password'];
 const publicPrefixes = ['/invite/', '/auth/', '/wevend', '/csuite'];
@@ -44,6 +45,16 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // /admin: gate with isPlatformAdmin, bypass onboarding. 404 (not 403) so the
+  // surface is invisible to non-admins per requirements R3.
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    const allowed = await isPlatformAdmin(user.id, user.email);
+    if (!allowed) {
+      return new NextResponse(null, { status: 404 });
+    }
+    return response;
   }
 
   // /orgs page — authenticated but no org membership check needed
