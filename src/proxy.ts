@@ -86,7 +86,11 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (pathname.startsWith('/org/')) {
+  // When impersonating, skip org/dept onboarding redirects so the operator can
+  // freely peek at any org the target belongs to. The target-id-scoped reads are
+  // handled per-page by getEffectiveUserId().
+  const impersonating = rawImp ? decodeImpersonationCookie(rawImp) : null;
+  if (pathname.startsWith('/org/') && !impersonating) {
     const orgSlug = pathname.split('/')[2];
     if (orgSlug) {
       const { data: org } = await supabase
